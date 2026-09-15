@@ -46,6 +46,9 @@ function revalidatePersonViews(personId: number) {
 }
 
 function messageFor(error: { message: string }, fallback: string) {
+  if (error.message.includes("Could not find the function")) {
+    return "The required Groundstation database update has not been installed yet. Apply the pending Supabase migrations and try again.";
+  }
   if (error.message.includes("not_authorized")) {
     return "You are not a Groundstation administrator.";
   }
