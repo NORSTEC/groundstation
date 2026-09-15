@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(341);
+select plan(344);
 
 -- DNS itself is checked by the server action. Database tests exercise the
 -- two guarded RPCs with a fixed hash so no test can use the retired direct-add
@@ -4174,6 +4174,10 @@ select 'legacy.ignite.no', id, null, 'legacy_admin_attestation'
 from public.organizations
 where slug = 'ignite';
 
+update private.organization_domains
+set verified_at = '2026-09-01 12:00:00+00'
+where domain = 'ignite.no';
+
 select is(
   private.apply_domain_join(
     (select id from public.people where full_name = 'Ignite Import'),
@@ -4217,6 +4221,16 @@ select set_config(
   true
 );
 
+select lives_ok(
+  $$
+    select public.trust_organization_domain(
+      (select id from public.organizations where slug = 'ignite'),
+      'ignite.no'
+    )
+  $$,
+  'manually trusting an existing DNS mapping is idempotent'
+);
+
 select is(
   (
     select public.trust_organization_domain(
@@ -4229,6 +4243,26 @@ select is(
 );
 
 reset role;
+
+select is(
+  (
+    select verification_method
+    from private.organization_domains
+    where domain = 'ignite.no'
+  ),
+  'dns_txt',
+  'manual trust does not downgrade existing DNS proof'
+);
+
+select is(
+  (
+    select verified_at
+    from private.organization_domains
+    where domain = 'ignite.no'
+  ),
+  '2026-09-01 12:00:00+00'::timestamptz,
+  'manual trust does not pretend the DNS proof was refreshed'
+);
 
 select is(
   private.apply_domain_join(

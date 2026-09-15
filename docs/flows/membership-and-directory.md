@@ -40,7 +40,7 @@ flowchart TD
     A["Person opens the access page"] --> B["Read hosted-domain claim copied from auth.identities"]
     B --> C{"Claim present?"}
     C -- "No" --> X1["Outcome: unproven; no membership change"]
-    C -- "Yes" --> D{"Domain has current DNS verification for an active organization?"}
+    C -- "Yes" --> D{"Domain has a current trusted mapping for an active organization?"}
     D -- "No" --> X2["No organization preselection; person chooses manually"]
     D -- "Yes" --> E{"Person active and not deleted?"}
     E -- "No" --> X3["Outcome: blocked"]

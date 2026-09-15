@@ -35,6 +35,8 @@ declare
   existing_organization_id bigint;
   address_count integer;
   reclassified_address_count integer;
+  effective_verification_method text;
+  effective_verified_at timestamptz;
 begin
   -- private.is_portal_admin includes the AAL2 requirement.
   if actor_person_id is null or not (select private.is_portal_admin()) then
@@ -76,7 +78,7 @@ begin
     raise exception using errcode = 'P0001', message = 'domain_registered_elsewhere';
   end if;
 
-  insert into private.organization_domains (
+  insert into private.organization_domains as existing (
     domain,
     organization_id,
     verified_at,
@@ -91,9 +93,26 @@ begin
   )
   on conflict (domain) do update
   set organization_id = excluded.organization_id,
-      verified_at = now(),
-      verification_method = 'portal_admin_attestation',
-      added_by_person_id = excluded.added_by_person_id;
+      verified_at = case
+        when existing.verification_method = 'dns_txt'
+          and existing.verified_at is not null
+          then existing.verified_at
+        else excluded.verified_at
+      end,
+      verification_method = case
+        when existing.verification_method = 'dns_txt'
+          and existing.verified_at is not null
+          then 'dns_txt'
+        else 'portal_admin_attestation'
+      end,
+      added_by_person_id = case
+        when existing.verification_method = 'dns_txt'
+          and existing.verified_at is not null
+          then existing.added_by_person_id
+        else excluded.added_by_person_id
+      end
+  returning verification_method, verified_at
+  into effective_verification_method, effective_verified_at;
 
   update public.person_emails
   set email_type = 'organization',
@@ -122,14 +141,14 @@ begin
     p_organization_id,
     jsonb_build_object(
       'domain', target_domain,
-      'verification_method', 'portal_admin_attestation',
+      'verification_method', effective_verification_method,
       'reclassified_address_count', reclassified_address_count
     )
   );
 
   return jsonb_build_object(
     'domain', target_domain,
-    'verifiedAt', now(),
+    'verifiedAt', effective_verified_at,
     'addressCount', address_count
   );
 end;

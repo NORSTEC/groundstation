@@ -498,13 +498,12 @@ export default function PrivacyPolicyPage() {
 
             <Section id="automated">
               <p className="mt-6 leading-relaxed">
-                Signing in with a Google account on an organization&rsquo;s
-                approved email domain gives you a membership in that
-                organization without anyone reviewing it — the domain acts as
-                proof of membership. reCAPTCHA automatically stops an access
-                request when its security score indicates automated abuse; it
-                does not decide whether you receive access. Approving or
-                declining a request is always done by a person.
+                Everyone submits an access request after signing in. If Google
+                confirms an approved organization domain and no previous
+                membership exists, Groundstation automatically approves the
+                request and creates the first membership. Other requests
+                require administrator review. reCAPTCHA may stop an automated
+                submission, but it does not decide whether you receive access.
               </p>
               <p className="mt-5 leading-relaxed">
                 The reCAPTCHA score is used only to prevent automated

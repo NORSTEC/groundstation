@@ -48,7 +48,15 @@ function verificationStatusLabel(
     ? "DNS verified"
     : domain.verificationMethod === "portal_admin_attestation"
       ? "Trusted by portal administrator"
-      : "Legacy mapping";
+      : "Legacy mapping — action required";
+}
+
+function isTrustedMapping(domain: OrganizationAccess["domains"][number]) {
+  return Boolean(
+    domain.verifiedAt &&
+      (domain.verificationMethod === "dns_txt" ||
+        domain.verificationMethod === "portal_admin_attestation"),
+  );
 }
 
 export function OrganizationAccessSettings({
@@ -289,11 +297,13 @@ export function OrganizationAccessSettings({
                           aria-hidden="true"
                           className="material-symbols-outlined text-[1.05rem]"
                         >
-                          {domain.verifiedAt ? "verified" : "warning"}
+                          {isTrustedMapping(domain) ? "verified" : "warning"}
                         </span>
                         {verificationStatusLabel(domain)}
                       </span>
-                      {!domain.verifiedAt && (
+                      {(!domain.verifiedAt ||
+                        domain.verificationMethod ===
+                          "legacy_admin_attestation") && (
                         <div className="ml-auto flex flex-wrap gap-2">
                           <button
                             className="portal-button"
@@ -341,7 +351,7 @@ export function OrganizationAccessSettings({
                       )}
                       <button
                         className={`portal-button ${
-                          domain.verifiedAt ? "ml-auto" : ""
+                          isTrustedMapping(domain) ? "ml-auto" : ""
                         }`}
                         disabled={busy}
                         onClick={() =>

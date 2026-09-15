@@ -147,8 +147,8 @@ export default async function AccessPage({
         <p className="mt-4 max-w-3xl text-sm opacity-60">
           Signed in as {access.profile.email}. Everyone sends an access request
           before entering Groundstation. A recognized organization account is
-          approved automatically; personal accounts are reviewed by an
-          administrator.
+          approved automatically only when no earlier membership exists. Other
+          requests require administrator review.
         </p>
 
         {pendingRequest ? (
