@@ -909,6 +909,10 @@ export type Database = {
         }[]
       }
       complete_own_organization_onboarding: { Args: never; Returns: Json }
+      complete_storage_purge: {
+        Args: { p_object_path: string }
+        Returns: undefined
+      }
       complete_portal_account_link: {
         Args: { p_token_hash: string }
         Returns: Json
@@ -985,6 +989,10 @@ export type Database = {
       list_organization_domains: {
         Args: { p_organization_id: number }
         Returns: Json
+      }
+      list_storage_purge_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: { object_path: string }[]
       }
       set_organization_domain_join_policy: {
         Args: { p_organization_id: number; p_policy: string }

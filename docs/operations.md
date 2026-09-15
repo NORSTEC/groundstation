@@ -61,6 +61,8 @@ Set production-only values for:
 - `PORTAL_SITE_URL`
 - `PORTAL_EMAIL_FROM`, `PORTAL_EMAIL_REPLY_TO`, `RESEND_API_KEY`
 - Google Workload Identity values and `GOOGLE_WORKSPACE_DOMAIN`
+- `SUPABASE_SECRET_KEY` and a randomly generated `CRON_SECRET` for the
+  server-only avatar purge job
 - `SLACK_CONNECT_CONNECTOR`
 
 Functions are pinned to `arn1` (Stockholm) in `vercel.json`, because the
