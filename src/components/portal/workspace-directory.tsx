@@ -144,7 +144,7 @@ function SuspensionButton({
 
   return (
     <button
-      className={`portal-button whitespace-nowrap ${
+      className={`portal-button workspace-directory-action whitespace-nowrap ${
         account.suspended ? "portal-button-primary" : "portal-button-danger"
       }`}
       disabled={busy || blocked}
@@ -167,7 +167,7 @@ function SuspensionButton({
 function AdminConsoleLink({ href }: { href: string }) {
   return (
     <a
-      className="portal-button whitespace-nowrap"
+      className="portal-button workspace-directory-action whitespace-nowrap"
       href={href}
       rel="noreferrer noopener"
       target="_blank"
@@ -175,7 +175,7 @@ function AdminConsoleLink({ href }: { href: string }) {
       <span aria-hidden="true" className="material-symbols-outlined text-[1.1rem]">
         open_in_new
       </span>
-      Open in Admin console
+      Admin console
     </a>
   );
 }
@@ -379,11 +379,18 @@ export function WorkspaceDirectory({
         </div>
 
         {unmatched.length > 0 ? (
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full min-w-[64rem] border-collapse">
+          <div className="workspace-directory-table-frame mt-8">
+            <table className="workspace-directory-table w-full table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[38%]" />
+                <col className="w-[17%]" />
+                <col className="w-[15%]" />
+                <col className="w-[30%]" />
+              </colgroup>
               <caption className="sr-only">
-                Google Workspace accounts with no matching person in Groundstation,
-                what each account is in Google, its status, and the actions available on it
+                Google Workspace accounts with no matching person in
+                Groundstation, what each account is in Google, its status, and
+                the actions available on it
               </caption>
               <thead>
                 <tr>
@@ -414,7 +421,7 @@ export function WorkspaceDirectory({
               <tbody>
                 {unmatchedPage.pageRows.map((account) => (
                   <tr className="border-b border-moody" key={account.externalId}>
-                    <td className="py-3 pl-4 pr-5">
+                    <td className="py-3 pl-4 pr-5" data-label="Email">
                       <span className="block font-medium break-words">
                         {account.accountEmail}
                       </span>
@@ -424,12 +431,14 @@ export function WorkspaceDirectory({
                         </span>
                       )}
                     </td>
-                    <td className="py-3 pr-5">{adminRoleLabel(account)}</td>
-                    <td className="py-3 pr-5">
+                    <td className="py-3 pr-5" data-label="Account type">
+                      {adminRoleLabel(account)}
+                    </td>
+                    <td className="py-3 pr-5" data-label="Account status">
                       {suspendedLabel(account.suspended)}
                     </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex flex-wrap justify-end gap-3">
+                    <td className="py-3 pr-4" data-label="Actions">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <SuspensionButton
                           account={account}
                           busy={busy}
@@ -494,11 +503,18 @@ export function WorkspaceDirectory({
         </div>
 
         {matched.length > 0 ? (
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full min-w-[68rem] border-collapse">
+          <div className="workspace-directory-table-frame mt-8">
+            <table className="workspace-directory-table w-full table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[29%]" />
+                <col className="w-[14%]" />
+                <col className="w-[12%]" />
+                <col className="w-[45%]" />
+              </colgroup>
               <caption className="sr-only">
                 Google Workspace accounts linked to a person in Groundstation,
-                what each account is in Google, its status, and the actions available on it
+                what each account is in Google, its status, and the actions
+                available on it
               </caption>
               <thead>
                 <tr>
@@ -529,7 +545,7 @@ export function WorkspaceDirectory({
               <tbody>
                 {matchedPage.pageRows.map((account) => (
                   <tr className="border-b border-moody" key={account.externalId}>
-                    <td className="py-3 pl-4 pr-5">
+                    <td className="py-3 pl-4 pr-5" data-label="Name">
                       <div className="flex min-w-0 items-center gap-3">
                         <MemberAvatar
                           name={account.personName ?? account.accountEmail}
@@ -545,12 +561,14 @@ export function WorkspaceDirectory({
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 pr-5">{adminRoleLabel(account)}</td>
-                    <td className="py-3 pr-5">
+                    <td className="py-3 pr-5" data-label="Account type">
+                      {adminRoleLabel(account)}
+                    </td>
+                    <td className="py-3 pr-5" data-label="Account status">
                       {suspendedLabel(account.suspended)}
                     </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex flex-wrap justify-end gap-3">
+                    <td className="py-3 pr-4" data-label="Actions">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <SuspensionButton
                           account={account}
                           busy={busy}
@@ -558,7 +576,7 @@ export function WorkspaceDirectory({
                         />
                         <AdminConsoleLink href={account.adminUrl} />
                         <button
-                          className="portal-button whitespace-nowrap"
+                          className="portal-button workspace-directory-action whitespace-nowrap"
                           onClick={() =>
                             router.push(`/admin/people/${account.personId}`)
                           }
@@ -570,7 +588,7 @@ export function WorkspaceDirectory({
                           >
                             person
                           </span>
-                          See profile
+                          Profile
                         </button>
                       </div>
                     </td>
