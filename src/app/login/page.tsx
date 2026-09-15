@@ -27,7 +27,7 @@ export default async function LoginPage({
                 NORSTEC
               </p>
               <p className="mt-3 text-left text-base font-medium uppercase tracking-[0.46em] text-[#EDE8DA]/65">
-                Intranet
+                Groundstation
               </p>
             </div>
           </div>
@@ -57,17 +57,17 @@ export default async function LoginPage({
           )}
           {error === "authorization" && (
             <p className="mt-3 text-sm text-[#a33b2b]" role="alert">
-              Intranet access could not be checked. Please try again.
+              Groundstation access could not be checked. Please try again.
             </p>
           )}
           {error === "deleted" && (
             <p className="mt-3 text-sm text-[#a33b2b]" role="alert">
-              This account has been deleted. It is erased permanently 30 days after that. Email intranet@norstec.no before then if you want it back.
+              This account has been deleted. It is erased permanently 30 days after that. Email groundstation@norstec.no before then if you want it back.
             </p>
           )}
           {error === "suspended" && (
             <p className="mt-3 text-sm text-[#a33b2b]" role="alert">
-              This intranet account is suspended. Contact NORSTEC IT for help.
+              This Groundstation account is suspended. Contact NORSTEC IT for help.
             </p>
           )}
           {error === "account_unlinked" && (
@@ -84,8 +84,8 @@ export default async function LoginPage({
               button, and the surprise is that a profile exists before access
               is ever requested. */}
           <p className="mt-5 text-sm leading-relaxed opacity-55">
-            Signing in creates an intranet profile, deleted after 30 days if you
-            never request access.{" "}
+            Signing in creates a Groundstation profile. It is deleted after 30
+            days if you never request access.{" "}
             <a
               className="legal-link"
               href="/privacy"
@@ -103,11 +103,26 @@ export default async function LoginPage({
             <ol className="mt-5 space-y-5">
               <li className="flex gap-4">
                 <span className="material-symbols-outlined mt-0.5 text-[1.3rem]">domain</span>
-                <div><p className="text-sm font-medium">Organization account</p><p className="mt-1 text-sm leading-5 opacity-55">Use the Google account provided by a NORSTEC member organization. On first sign-in, you can connect it to an existing intranet profile or create a new one.</p></div>
+                <div>
+                  <p className="text-sm font-medium">Organization account</p>
+                  <p className="mt-1 text-sm leading-5 opacity-55">
+                    Use the Google account provided by a NORSTEC member
+                    organization. Groundstation detects the organization, so
+                    you do not select it yourself. You still send an access
+                    request; a first membership is approved automatically.
+                  </p>
+                </div>
               </li>
               <li className="flex gap-4">
                 <span className="material-symbols-outlined mt-0.5 text-[1.3rem]">person</span>
-                <div><p className="text-sm font-medium">Personal account</p><p className="mt-1 text-sm leading-5 opacity-55">You can sign in with a personal Google account and request access, or use one already connected to your profile.</p></div>
+                <div>
+                  <p className="text-sm font-medium">Personal account</p>
+                  <p className="mt-1 text-sm leading-5 opacity-55">
+                    You can sign in with a personal Google account. Select the
+                    organization you belong to and wait for an administrator to
+                    approve the request.
+                  </p>
+                </div>
               </li>
             </ol>
           </div>

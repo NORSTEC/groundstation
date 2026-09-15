@@ -6,6 +6,7 @@ const RECAPTCHA_VERIFY_URL =
 
 type RecaptchaResponse = {
   action?: string;
+  hostname?: string;
   score?: number;
   success?: boolean;
 };
@@ -19,11 +20,13 @@ export async function verifyAccessRequestCaptcha(
   {
     fetcher = fetch,
     nodeEnv = process.env.NODE_ENV,
+    expectedHostname = productionHostname(),
     secretKey = process.env.RECAPTCHA_SECRET_KEY,
     siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
   }: {
     fetcher?: typeof fetch;
     nodeEnv?: string;
+    expectedHostname?: string;
     secretKey?: string;
     siteKey?: string;
   } = {},
@@ -36,6 +39,10 @@ export async function verifyAccessRequestCaptcha(
       return { ok: true };
     }
 
+    return { ok: false, reason: "unavailable" };
+  }
+
+  if (nodeEnv === "production" && !expectedHostname) {
     return { ok: false, reason: "unavailable" };
   }
 
@@ -66,6 +73,7 @@ export async function verifyAccessRequestCaptcha(
     if (
       result.success !== true ||
       result.action !== RECAPTCHA_ACTION ||
+      (expectedHostname !== undefined && result.hostname !== expectedHostname) ||
       typeof result.score !== "number" ||
       result.score < RECAPTCHA_MINIMUM_SCORE
     ) {
@@ -75,5 +83,19 @@ export async function verifyAccessRequestCaptcha(
     return { ok: true };
   } catch {
     return { ok: false, reason: "unavailable" };
+  }
+}
+
+function productionHostname() {
+  const configuredUrl = process.env.PORTAL_SITE_URL;
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const candidate = configuredUrl || (vercelUrl ? `https://${vercelUrl}` : "");
+
+  if (!candidate) return undefined;
+
+  try {
+    return new URL(candidate).hostname.toLowerCase();
+  } catch {
+    return undefined;
   }
 }

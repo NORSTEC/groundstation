@@ -20,11 +20,11 @@ flowchart TD
     H --> X4["/login?error=deleted or suspended"]
     G -- "Yes" --> I{"Organization account onboarding pending?"}
     I -- "Yes" --> J["/onboarding/account"]
-    I -- "No" --> K["Run trusted domain-join decision"]
+    I -- "No" --> K["Resolve trusted hosted-domain mapping"]
     K --> L{"Active/ended membership or alumni access exists?"}
     L -- "Yes" --> M["Portal home / "]
     L -- "No" --> N{"Domain decision says request?"}
-    N -- "Yes" --> O["/access with organization preselected"]
+    N -- "Yes" --> O["/access with organization detected"]
     N -- "No" --> P["/access"]
 ```
 
@@ -69,13 +69,33 @@ flowchart TD
     D -- "No" --> X1["Show linking error or route to admin merge"]
     D -- "Yes" --> E["Move login to existing person and remove empty duplicate"]
     B -- "No, create profile" --> F["Mark onboarding complete"]
-    E --> G["Run domain-join decision"]
+    E --> G["Resolve trusted hosted-domain mapping"]
     F --> G
-    G --> H{"Decision outcome"}
-    H -- "joined or already member" --> I["Portal home / "]
-    H -- "request or previous membership" --> J["/access with organization preselected"]
-    H -- "unproven or no organization" --> K["/access"]
+    G --> H{"Already holds portal access?"}
+    H -- "Yes" --> I["Portal home / "]
+    H -- "No, recognized organization" --> J["/access with organization detected"]
+    H -- "No match" --> K["/access with organization selector"]
 ```
+
+## Access request and automatic approval
+
+```mermaid
+flowchart TD
+    A["Authenticated person opens /access"] --> B{"Trusted Google hosted-domain mapping?"}
+    B -- "No" --> C["Person selects organization or alumni access"]
+    C --> D["Submit request after server validation and reCAPTCHA"]
+    D --> E["Pending request for an administrator"]
+    B -- "Yes" --> F["Organization shown as detected and cannot be changed"]
+    F --> G["Submit request after server validation and reCAPTCHA"]
+    G --> H{"Existing membership record?"}
+    H -- "No" --> I["Create approved request, member membership, audit event and notification in one transaction"]
+    H -- "Ended, suspended or planned" --> E
+    H -- "Active" --> J["No new request; enter portal"]
+```
+
+An email suffix or form field never chooses the automatic path. The database
+reads `portal_accounts.hosted_domain`, copied from the signed Google identity,
+and resolves it through a mapping trusted at AAL2 by a portal administrator.
 
 ## Link another Google account
 
@@ -103,7 +123,7 @@ flowchart TD
     L -- "No" --> M["Attach second Auth user to surviving person"]
     M --> N["Transfer safe email and identity data"]
     N --> O["Delete empty duplicate person"]
-    O --> P["Run domain-join decision"]
+    O --> P["Refresh trusted hosted-domain mapping"]
     P --> Q["Expire link cookies"]
     Q --> R["/profile?accountLinked=true"]
 ```

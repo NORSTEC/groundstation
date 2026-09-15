@@ -1,11 +1,11 @@
 /**
- * Shown while the page below the intranet shell is still being rendered.
+ * Shown while the page below Groundstation shell is still being rendered.
  *
  * Without this file the App Router has nowhere to stream into, so a click on a
  * navigation link does nothing visible until the whole server render finishes —
  * the address bar does not move, the old page stays put, and the only signal
- * that anything happened is that the intranet has stopped responding. Every
- * intranet page resolves the signed-in person before it can ask for anything
+ * that anything happened is that Groundstation has stopped responding. Every
+ * Groundstation page resolves the signed-in person before it can ask for anything
  * else, so that wait is never zero.
  *
  * The shapes below are deliberately generic. A skeleton that mimics one page's

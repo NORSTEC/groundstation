@@ -9,9 +9,9 @@ const linkErrors: Record<string, string> = {
   limit: "That profile already has two connected Google accounts.",
   merge: "The profiles could not be connected. Please try again.",
   oauth: "Google sign-in could not be completed. Please try again.",
-  profile_has_data: "This organization account already contains intranet data and must be merged by NORSTEC IT.",
-  same: "Choose the Google account you already used for your existing intranet profile.",
-  source_inactive: "This organization account no longer has intranet access. Contact NORSTEC IT.",
+  profile_has_data: "This organization account already contains Groundstation data and must be merged by NORSTEC IT.",
+  same: "Choose the Google account you already used for your existing Groundstation profile.",
+  source_inactive: "This organization account no longer has Groundstation access. Contact NORSTEC IT.",
   start: "Account linking could not be started. Please try again.",
 };
 
@@ -34,7 +34,7 @@ export default async function AccountOnboardingPage({
     <PortalEntryShell>
       <section>
         <h1 className="flex items-center gap-2 text-h2">
-          Do you already have an intranet profile?
+          Do you already have a Groundstation profile?
           <span
             aria-hidden="true"
             className="entry-heading-star inline-block shrink-0"
@@ -43,15 +43,14 @@ export default async function AccountOnboardingPage({
         <p className="mt-4 max-w-3xl text-sm leading-relaxed opacity-60">
           You signed in with {access.profile.email}. Choose whether this organization account belongs to an existing profile or should create a new one.
         </p>
-        {/* Either choice writes membership data: connecting merges this
-            sign-in into an existing profile, creating one starts a new
-            member record. Article 13 asks for that to be said where the
-            choice is made. */}
+        {/* Either choice writes profile/account data, so Article 13 asks for
+            that to be said where the choice is made. Membership is handled
+            only by the explicit access request that follows. */}
         <p className="mt-3 max-w-3xl text-sm leading-relaxed opacity-45">
-          If that organization admits its own Google accounts without review,
-          either choice gives you a membership and puts your name in its member
-          directory. If it reviews them, you are taken to a request instead, and
-          an administrator decides.{" "}
+          This choice only creates or connects your profile. If you do not
+          already have access, you then send an access request. A recognized
+          organization account has its first membership approved automatically;
+          a personal account is reviewed by an administrator.{" "}
           <a
             className="legal-link"
             href="/privacy"
@@ -98,7 +97,7 @@ export default async function AccountOnboardingPage({
             <span className="material-symbols-outlined text-2xl">person_add</span>
             <h2 className="mt-5 text-h3 font-medium">Create new profile</h2>
             <p className="mt-3 flex-1 text-sm leading-relaxed opacity-65">
-              Choose this if this is your first time using the NORSTEC intranet.
+              Choose this if this is your first time using NORSTEC Groundstation.
             </p>
             <form action={createNewPortalProfile} className="mt-7">
               <button className="portal-button" type="submit">

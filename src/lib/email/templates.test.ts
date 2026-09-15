@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isNotificationKind, renderNotification } from "@/lib/email/templates";
 
-const site = "https://intranet.norstec.no";
+const site = "https://groundstation.norstec.no";
 
 function approved(payload: Record<string, unknown>, recipientName = "Ada Lovelace") {
   return renderNotification("access_request_approved", {
@@ -69,13 +69,13 @@ describe("every notification", () => {
     for (const email of rendered) {
       const withoutImages = email.html.replace(/<img[^>]*>/g, "");
       expect(withoutImages).toContain("NORSTEC");
-      expect(withoutImages).toContain("Intranet");
+      expect(withoutImages).toContain("Groundstation");
     }
   });
 
   // Clients disagree about how much of <head> they keep. The modern scheme
   // declarations and the old bgcolor fallback therefore have to agree.
-  it("pins the colour scheme to the intranet's dark canvas", () => {
+  it("pins the colour scheme to Groundstation's dark canvas", () => {
     for (const email of rendered) {
       expect(email.html).toContain('name="color-scheme" content="dark"');
       expect(email.html).toContain('name="supported-color-schemes" content="dark"');
@@ -188,7 +188,7 @@ describe("an approved request", () => {
   // requester already knows what they asked for.
   it("keeps the organization out of the subject", () => {
     const email = approved({ organization_name: "Orbit NTNU" });
-    expect(email.subject).toBe("Your NORSTEC Intranet request was approved");
+    expect(email.subject).toBe("Your NORSTEC Groundstation request was approved");
   });
 
   // An alumni request belongs to no organization, so there is no name to use.
@@ -259,7 +259,7 @@ describe("an approved request", () => {
 describe("a declined request", () => {
   it("keeps the organization out of the subject too", () => {
     expect(rejected({ organization_name: "Orbit NTNU" }).subject).toBe(
-      "Your NORSTEC Intranet request was declined",
+      "Your NORSTEC Groundstation request was declined",
     );
   });
 
@@ -271,10 +271,10 @@ describe("a declined request", () => {
     expect(email.text).toContain("not kept a profile");
   });
 
-  it("sends them to the request page, not to an intranet they cannot open", () => {
+  it("sends them to the request page, not to a Groundstation they cannot open", () => {
     const email = rejected({ organization_name: "Orbit NTNU" });
     expect(email.html).toContain(`${site}/access`);
-    expect(email.html).not.toContain("Open the intranet");
+    expect(email.html).not.toContain("Open Groundstation");
   });
 });
 

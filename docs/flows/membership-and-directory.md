@@ -21,7 +21,7 @@ flowchart TD
     K -- "No" --> X2["Start a new verification"]
     K -- "Yes" --> L["Mark domain DNS verified and audit"]
     L --> M["Reclassify matching addresses as organization addresses"]
-    M --> N["Domain may now participate in automatic join"]
+    M --> N["Matching Workspace requests may now be approved automatically"]
     N --> O{"Portal admin removes domain later?"}
     O -- "No" --> N
     O -- "Yes" --> P["Delete domain trust and verification claim"]
@@ -29,29 +29,28 @@ flowchart TD
     Q --> R["Existing memberships remain unchanged"]
 ```
 
-## Automatic domain membership
+## Trusted-domain access request
 
-The default organization policy is automatic joining. A previous membership
-always outranks the domain rule.
+Google's hosted-domain claim detects the organization. It never creates a
+membership at sign-in; the person must submit the request first. An existing
+membership always outranks automatic approval.
 
 ```mermaid
 flowchart TD
-    A["Sign-in, onboarding or account link calls domain join"] --> B["Read latest hosted-domain claim copied from auth.identities"]
+    A["Person opens the access page"] --> B["Read hosted-domain claim copied from auth.identities"]
     B --> C{"Claim present?"}
     C -- "No" --> X1["Outcome: unproven; no membership change"]
-    C -- "Yes" --> D{"Domain has current DNS verification for an active organization?"}
-    D -- "No" --> X2["Outcome: domain_not_verified or no_organization"]
+    C -- "Yes" --> D{"Domain has a current trusted mapping for an active organization?"}
+    D -- "No" --> X2["No organization preselection; person chooses manually"]
     D -- "Yes" --> E{"Person active and not deleted?"}
     E -- "No" --> X3["Outcome: blocked"]
     E -- "Yes" --> F{"Membership row already exists?"}
-    F -- "Active" --> G["Outcome: member; no duplicate change"]
-    F -- "Ended, suspended or planned" --> H["Outcome: request; never reactivate automatically"]
-    F -- "No" --> I{"Organization join policy is auto?"}
-    I -- "No" --> H
-    I -- "Yes" --> J["Create active membership with role member"]
+    F -- "Active" --> G["Open Groundstation; no duplicate change"]
+    F -- "Ended, suspended or planned" --> H["Create pending request for human review"]
+    F -- "No" --> I["Person reviews and submits request"]
+    I --> J["Create approved request and active member role atomically"]
     J --> K["Open first membership period"]
-    K --> L["Audit/provisioning triggers run"]
-    L --> M["Outcome: joined"]
+    K --> L["Audit and queue confirmation email"]
 ```
 
 ## Access request and review
@@ -59,14 +58,19 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["Signed-in person without current access opens /access"] --> B{"Request type"}
-    B -- "Organization" --> C["Choose active organization except NORSTEC"]
+    B -- "Organization account" --> C["Use organization detected from trusted hosted domain"]
+    B -- "Personal account" --> C2["Choose active organization except NORSTEC"]
     B -- "Alumni" --> D["No organization selected"]
     C --> E["Validate name, study data and optional message"]
+    C2 --> E
     D --> E
     E --> F{"Existing membership, alumni grant or duplicate pending request?"}
     F -- "Yes" --> X1["Reject duplicate or already-granted request"]
-    F -- "No" --> G["Create pending request"]
-    G --> H{"User withdraws before review?"}
+    F -- "No" --> G{"Trusted domain and no prior membership?"}
+    G -- "Yes" --> G1["Create approved request and active membership atomically"]
+    G -- "No" --> G2["Create pending request"]
+    G1 --> U
+    G2 --> H{"User withdraws before review?"}
     H -- "Yes" --> I["Set request cancelled"]
     H -- "No" --> J{"Who may review?"}
     J -- "Organization request" --> K["Scoped organization admin at AAL2"]
@@ -93,8 +97,8 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> planned: imported or scheduled
-    [*] --> active: DNS-verified auto join
     [*] --> active: approved request
+    [*] --> active: trusted-domain request auto-approved
     planned --> active: explicit activation
     active --> ended: organization admin ends membership
     active --> suspended: administrative lifecycle change

@@ -138,8 +138,8 @@ export default async function SlackAccountsPage() {
   return (
     <>
       <p className="max-w-2xl text-sm opacity-55">
-        What the Norstec Slack workspace contains, and how much of it the intranet recognises.
-        Account type and account status are both Slack’s own, and neither says anything about intranet access.
+        What the Norstec Slack workspace contains, and how much of it Groundstation recognises.
+        Account type and account status are both Slack’s own, and neither says anything about Groundstation access.
       </p>
 
       <div className="mt-10">

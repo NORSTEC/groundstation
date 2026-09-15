@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { NORSTEC_ORGANIZATION_SLUG } from "@/lib/portal/norstec";
+import { after } from "next/server";
+import { drainNotifications } from "@/lib/email/notifications";
 import { isStudyField } from "@/lib/profile/study-fields";
 import { verifyAccessRequestCaptcha } from "@/lib/security/recaptcha";
 import { createClient } from "@/lib/supabase/server";
@@ -96,20 +97,6 @@ export async function submitAccessRequest(formData: FormData) {
     redirect(`/access?error=captcha_${captcha.reason}`);
   }
 
-  // The form never offers NORSTEC, so a request naming it was hand-made. It is
-  // refused here rather than filed for an administrator who will never look.
-  if (organizationId !== null) {
-    const { data: organization } = await supabase
-      .from("organizations")
-      .select("slug")
-      .eq("id", organizationId)
-      .maybeSingle();
-
-    if (!organization || organization.slug === NORSTEC_ORGANIZATION_SLUG) {
-      redirect("/access?error=invalid_request");
-    }
-  }
-
   const { error } = await supabase.rpc("submit_access_request", {
     target_organization_id: organizationId,
     requested_first_name: firstName,
@@ -127,6 +114,11 @@ export async function submitAccessRequest(formData: FormData) {
 
     redirect("/access?error=request_failed");
   }
+
+  // Trusted organization accounts are approved in the same database
+  // transaction as the request. Their confirmation email is queued there and
+  // sent after this response; ordinary pending requests queue nothing.
+  after(() => drainNotifications(supabase));
 
   redirect("/access");
 }

@@ -9,7 +9,7 @@ persistent state. Linear read-only pages are not diagrammed.
 | Area | Flows |
 | --- | --- |
 | [Authentication and accounts](authentication-and-accounts.md) | sign-in, provisioning, onboarding, account linking, unlinking, MFA |
-| [Membership and directory](membership-and-directory.md) | domain verification, automatic join, access review, membership lifecycle, profile save, visibility, organization/team editing |
+| [Membership and directory](membership-and-directory.md) | domain trust, access requests and automatic approval, membership lifecycle, profile save, visibility, organization/team editing |
 | [Portal administration](portal-administration.md) | access and roles, merge, deletion/restore/purge, contact addresses |
 | [Integrations and notifications](integrations-and-notifications.md) | Workspace sync, suspension, Slack sync, email outbox |
 

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { FailureNotice } from "@/components/failure-notice";
 
 /**
- * Rendered inside the intranet shell, so the navigation survives the failure
+ * Rendered inside Groundstation shell, so the navigation survives the failure
  * and the person is never stranded on a page with no way out.
  */
 export default function PortalError({
@@ -16,7 +16,7 @@ export default function PortalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("unhandled intranet error", error.digest);
+    console.error("unhandled Groundstation error", error.digest);
   }, [error]);
 
   return (
