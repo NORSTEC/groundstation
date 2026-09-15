@@ -5,6 +5,7 @@ import {
   ACCOUNT_LINK_FLOW_COOKIE,
   createAccountLinkClient,
 } from "@/lib/supabase/account-link";
+import { accountLinkErrorReason } from "@/lib/supabase/account-link-errors";
 
 const LINK_COOKIE = "portal-account-link";
 const LINK_COOKIE_PATH = "/auth/account-link";
@@ -69,17 +70,7 @@ export async function GET(request: Request) {
   );
 
   if (linkError) {
-    const reason = linkError.message.includes("same_portal_account")
-      ? "same"
-      : linkError.message.includes("source_profile_has_data")
-        ? "profile_has_data"
-        : linkError.message.includes("source_portal_access_required")
-          ? "source_inactive"
-          : linkError.message.includes("too_many_portal_accounts")
-            ? "limit"
-            : linkError.message.includes("expired")
-              ? "expired"
-              : "merge";
+    const reason = accountLinkErrorReason(linkError.message);
 
     return endLinkFlow(
       NextResponse.redirect(

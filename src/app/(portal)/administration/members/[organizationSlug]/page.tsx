@@ -13,6 +13,7 @@ type MembershipRow = {
     | {
         id: number;
         avatar_path: string | null;
+        deleted_at: string | null;
         full_name: string | null;
         person_emails: Array<{
           email: string;
@@ -23,6 +24,7 @@ type MembershipRow = {
     | Array<{
         id: number;
         avatar_path: string | null;
+        deleted_at: string | null;
         full_name: string | null;
         person_emails: Array<{
           email: string;
@@ -49,7 +51,7 @@ export default async function OrganizationMemberStatusPage({
   const membershipsResult = await supabase
     .from("memberships")
     .select(
-      "id, role, status, people!memberships_person_id_fkey (id, full_name, avatar_path, person_emails (email, email_type, is_primary))",
+      "id, role, status, people!memberships_person_id_fkey (id, full_name, avatar_path, deleted_at, person_emails (email, email_type, is_primary))",
     )
     .eq("organization_id", administeredOrganization.organizationId)
     .in("status", ["active", "ended"])
@@ -69,7 +71,7 @@ export default async function OrganizationMemberStatusPage({
     const person = Array.isArray(membership.people)
       ? membership.people[0]
       : membership.people;
-    return person ? [person] : [];
+    return person && !person.deleted_at ? [person] : [];
   });
   const avatarUrls = await getMemberAvatarUrls(
     people.map((person) => person.avatar_path),
@@ -79,7 +81,7 @@ export default async function OrganizationMemberStatusPage({
     const person = Array.isArray(membership.people)
       ? membership.people[0]
       : membership.people;
-    if (!person) return [];
+    if (!person || person.deleted_at) return [];
 
     const orderedEmails = [...person.person_emails].sort(
       (left, right) =>
