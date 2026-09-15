@@ -20,12 +20,12 @@ export async function GET(request: Request) {
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secretKey = process.env.SUPABASE_SECRET_KEY;
-  if (!url || !secretKey) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !publishableKey) {
     return Response.json({ error: "storage_purge_not_configured" }, { status: 503 });
   }
 
-  const supabase = createClient<Database>(url, secretKey, {
+  const supabase = createClient<Database>(url, publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const { data: queued, error: queueError } = await supabase.rpc(
