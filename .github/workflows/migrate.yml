@@ -44,9 +44,10 @@
 # Secrets are never passed to workflows triggered from a fork, so a stranger's
 # pull request cannot reach these however the file is written.
 #
-# `supabase db push` applies only migrations the project has not seen, and stops
-# at the first failure. Migrations in this repository are append-only (see
-# AGENTS.md), so this never rewrites anything already applied.
+# `supabase db push --include-all` applies only migration versions the project
+# has not seen, including a corrective migration that must sort immediately
+# before the migration it repairs. Migrations in this repository are
+# append-only (see AGENTS.md), so this never rewrites anything already applied.
 #
 # WHAT IT CANNOT DO: it cannot order itself against the Vercel deploy. Both are
 # triggered by the same push and race. In practice the migration wins — this
@@ -108,4 +109,4 @@ jobs:
       - name: Apply them
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase db push
+        run: supabase db push --include-all
