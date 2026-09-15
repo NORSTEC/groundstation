@@ -189,6 +189,13 @@ export default async function ProfilePage({
           status="success"
         />
       )}
+      {accountLinked === "request-sent" && (
+        <Toast
+          clearParams={["accountLinked"]}
+          message="Google account linked. Membership request sent for review."
+          status="success"
+        />
+      )}
       {accountLinkError && (
         <Toast
           clearParams={["accountLinkError"]}
