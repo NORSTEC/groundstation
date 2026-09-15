@@ -373,7 +373,7 @@ function DesktopSidebar({
   return (
     <aside
       className={`portal-sidebar fixed inset-y-0 left-0 z-40 hidden overflow-visible lg:block ${
-        collapsed ? "w-24" : "w-72"
+        collapsed ? "w-24" : "w-80"
       }`}
     >
       <div className="relative z-10 flex h-full w-full flex-col overflow-hidden px-[1.625rem] py-8">
@@ -565,7 +565,7 @@ export function PortalShell({
 
       <main
         className={`relative flex min-h-screen flex-col overflow-hidden pt-16 transition-[margin] duration-300 lg:pt-0 ${
-          sidebarCollapsed ? "lg:ml-24" : "lg:ml-72"
+          sidebarCollapsed ? "lg:ml-24" : "lg:ml-80"
         }`}
       >
         <div className="relative z-10 mx-auto w-full max-w-[100rem] flex-1 px-5 py-12 sm:px-8 lg:px-16 lg:py-20 xl:px-20 2xl:px-28">

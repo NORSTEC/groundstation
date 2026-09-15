@@ -11,6 +11,9 @@ export default async function OrganizationsPage() {
     .from("organizations")
     .select("id, name, slug, short_description, logo_path")
     .eq("status", "active")
+    // Defense in depth while deployments catch up with the retirement
+    // migration. This organization must never return to the live directory.
+    .neq("slug", "interstellar-uia")
     .order("name");
 
   if (organizationsResult.error) {
