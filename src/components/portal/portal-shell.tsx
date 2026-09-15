@@ -373,7 +373,7 @@ function DesktopSidebar({
   return (
     <aside
       className={`portal-sidebar fixed inset-y-0 left-0 z-40 hidden overflow-visible lg:block ${
-        collapsed ? "w-24" : "w-80"
+        collapsed ? "w-24" : "w-72"
       }`}
     >
       <div className="relative z-10 flex h-full w-full flex-col overflow-hidden px-[1.625rem] py-8">
