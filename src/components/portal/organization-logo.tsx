@@ -4,7 +4,6 @@ const logoScales: Record<string, number> = {
   "astro-hvl": 1.65,
   "eclipse-nmbu": 3.1,
   "ignite-uit": 2.9,
-  "interstellar-uia": 1,
   "orbit-ntnu": 1.15,
   "polarix-uit": 1.35,
   "portal-space": 1.35,

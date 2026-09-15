@@ -1,6 +1,6 @@
 /**
  * The facts the privacy policy states about NORSTEC as an organization, rather
- * than about the intranet as software. Everything else on `/privacy` is written
+ * than about Groundstation as software. Everything else on `/privacy` is written
  * from what the code and the migrations actually do and does not belong here.
  *
  * These are the only parts of the policy that cannot be read out of this
@@ -8,7 +8,7 @@
  * the page: GDPR article 13(1)(a) requires the controller's identity and
  * contact details, and a policy that names neither does not satisfy it.
  */
-export const PRIVACY_CONTACT_EMAIL = "intranet@norstec.no";
+export const PRIVACY_CONTACT_EMAIL = "groundstation@norstec.no";
 
 export const PRIVACY_CONTROLLER = {
   legalName: "NORSTEC",

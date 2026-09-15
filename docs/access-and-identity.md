@@ -27,26 +27,34 @@ Provisioning then:
 2. Matches an existing portal account, then a safely claimable address.
 3. Creates a person only when neither exists.
 4. Records the Google login in `portal_accounts`.
-5. Evaluates the hosted-domain claim through one domain-join function.
+5. Resolves the hosted-domain claim through one domain-mapping function.
 
 User-editable Auth metadata is sanitized on later updates and is never an
 authorization source. The newest signed identity claim is authoritative; if it
 no longer contains a hosted domain, the stored domain proof is removed.
 
-## Domains and automatic membership
+## Domains and access requests
 
-Automatic membership remains the default. It requires both:
+Every new person explicitly submits an access request. A first organization
+membership may be approved automatically only when both are true:
 
 - Google proves the account’s hosted domain; and
-- the portal has verified domain ownership through a DNS TXT record.
+- the portal has a trusted domain-to-organization mapping.
 
-The email text alone is not proof. Shared providers and institutional domains
-such as Gmail and `ntnu.no` are reserved. A verified domain can create a first
-`member` membership but never an administrator role.
+DNS TXT verification is the strongest mapping proof. For launch, a portal
+administrator at AAL2 may instead attest a mapping after checking an official
+source or a known organization contact. That weaker method is named explicitly
+in the audit log. Shared providers and institution-wide domains such as Gmail
+and `ntnu.no` remain reserved.
+
+The email text, selected organization and URL parameters never grant access.
+The database takes the domain from the signed Google identity, fixes the
+request to the mapped organization, records the approved request, creates a
+plain `member` membership, and writes an audit event in one transaction.
 
 An existing membership always wins over the domain rule. `ended`, `suspended`
-or planned membership is not reactivated by another sign-in. Existing active
-membership is idempotent.
+or planned membership is not reactivated automatically; it enters the human
+review queue. Existing active membership is idempotent.
 
 ## Linking Google accounts
 

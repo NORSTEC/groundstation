@@ -113,7 +113,7 @@ export function MfaSettings({
 
       const { data, error: enrollmentError } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "NORSTEC intranet",
+        friendlyName: "NORSTEC Groundstation",
         issuer: "NORSTEC",
       });
 
@@ -231,7 +231,7 @@ export function MfaSettings({
             <h3 className="text-xl font-medium">Scan and confirm</h3>
             <div className="mt-5 grid gap-6 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-start">
               <Image
-                alt="QR code for the NORSTEC intranet authenticator"
+                alt="QR code for the NORSTEC Groundstation authenticator setup"
                 className="rounded-xl bg-white p-3"
                 height={192}
                 src={enrollment.qrCode}

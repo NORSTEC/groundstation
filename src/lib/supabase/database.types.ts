@@ -990,6 +990,10 @@ export type Database = {
         Args: { p_organization_id: number; p_policy: string }
         Returns: Json
       }
+      trust_organization_domain: {
+        Args: { p_domain: string; p_organization_id: number }
+        Returns: Json
+      }
       preview_organization_domain: {
         Args: { p_domain: string; p_organization_id: number }
         Returns: Json

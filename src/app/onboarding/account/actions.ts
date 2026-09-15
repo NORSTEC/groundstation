@@ -13,10 +13,8 @@ export async function createNewPortalProfile() {
     redirect("/onboarding/account?error=complete_failed");
   }
 
-  // Finishing onboarding no longer implies a membership. Whether it produced
-  // one depends on the organization's join policy, and on whether this person
-  // was a member there before, so the answer comes back with the call rather
-  // than being assumed here.
+  // Finishing onboarding never creates a membership. An existing member can
+  // continue; everybody else goes to the explicit request flow.
   const result = (data ?? {}) as {
     organizationSlug?: string;
     outcome?: string;
@@ -27,12 +25,5 @@ export async function createNewPortalProfile() {
     redirect("/");
   }
 
-  const destination = new URLSearchParams();
-  if (result.outcome === "request" && result.organizationSlug) {
-    destination.set("organization", result.organizationSlug);
-    if (result.returning) destination.set("returning", "true");
-  }
-
-  const query = destination.toString();
-  redirect(query ? `/access?${query}` : "/access");
+  redirect("/access");
 }

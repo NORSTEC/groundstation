@@ -47,10 +47,10 @@ function revalidatePersonViews(personId: number) {
 
 function messageFor(error: { message: string }, fallback: string) {
   if (error.message.includes("not_authorized")) {
-    return "You are not an intranet administrator.";
+    return "You are not a Groundstation administrator.";
   }
   if (error.message.includes("self_action_blocked")) {
-    return "You cannot run this on yourself. Ask another intranet administrator.";
+    return "You cannot run this on yourself. Ask another Groundstation administrator.";
   }
   if (error.message.includes("person_not_found")) {
     return "This person no longer exists.";
@@ -68,16 +68,16 @@ function messageFor(error: { message: string }, fallback: string) {
     return "This person has never signed in, so there is no access to activate.";
   }
   if (error.message.includes("portal_admin_role_first")) {
-    return "Remove the intranet administrator role first.";
+    return "Remove Groundstation administrator role first.";
   }
   if (error.message.includes("last_portal_admin")) {
-    return "The intranet must keep at least one administrator.";
+    return "Groundstation must keep at least one administrator.";
   }
   if (error.message.includes("portal_access_required")) {
-    return "Only someone with active intranet access can administer the intranet.";
+    return "Only someone with active Groundstation access can administer Groundstation.";
   }
   if (error.message.includes("norstec_domain_required")) {
-    return "Only people with a norstec.no Google account can become intranet administrators.";
+    return "Only people with a norstec.no Google account can become Groundstation administrators.";
   }
   if (error.message.includes("last_organization_admin")) {
     return "This person is the last active administrator of an organization. Appoint another administrator first.";
@@ -137,7 +137,7 @@ function messageFor(error: { message: string }, fallback: string) {
     return "This is their only sign-in account. Removing it would lock them out.";
   }
   if (error.message.includes("portal_admin_requires_norstec_account")) {
-    return "Intranet administrators must keep a norstec.no sign-in account. Revoke the role first.";
+    return "Groundstation administrators must keep a norstec.no sign-in account. Revoke the role first.";
   }
   if (error.message.includes("membership_requires_account")) {
     return "An active organization membership rests on this account. End the membership first.";
@@ -149,7 +149,7 @@ function messageFor(error: { message: string }, fallback: string) {
     return "Pick two different people.";
   }
   if (error.message.includes("source_is_portal_administrator")) {
-    return "An intranet administrator cannot be folded into someone else. Merge the duplicate into them instead, or revoke the role first.";
+    return "A Groundstation administrator cannot be folded into someone else. Merge the duplicate into them instead, or revoke the role first.";
   }
   if (error.message.includes("source_is_organization_administrator")) {
     return "This profile is an organization administrator. Hand over that role before merging it into another person.";
@@ -185,10 +185,10 @@ function workspaceMessageFor(
     return "Google Workspace is not configured on this server.";
   }
   if (error.status === 403 && intent === "write") {
-    return `Google refused to change this account: ${error.message} Check that the intranet's role in the Google Admin console holds Admin API privileges › Users › Update, and that this account is not a super administrator — a delegated role cannot change one.`;
+    return `Google refused to change this account: ${error.message} Check that Groundstation's role in the Google Admin console holds Admin API privileges › Users › Update, and that this account is not a super administrator — a delegated role cannot change one.`;
   }
   if (error.status === 403 || error.status === 401) {
-    return `Google refused the intranet's service account: ${error.message}`;
+    return `Google refused Groundstation's service account: ${error.message}`;
   }
   return `Google refused the request: ${error.message}`;
 }
@@ -254,7 +254,7 @@ export async function syncWorkspaceDirectory(): Promise<PortalManagementResult> 
   return {
     ok: true,
     message: summary
-      ? `Directory synced. ${summary.matched} matched, ${summary.unmatched} not in the intranet.`
+      ? `Directory synced. ${summary.matched} matched, ${summary.unmatched} not in Groundstation.`
       : "Directory synced.",
   };
 }
@@ -274,10 +274,10 @@ function slackMessageFor(error: unknown, fallback: string) {
     return "The Slack app is missing a permission. It needs users:read, users:read.email and team:read, and has to be reinstalled to the workspace after they are added.";
   }
   if (error.code === "not_authed" || error.code === "invalid_auth") {
-    return "Slack rejected the intranet's token. Check the Vercel Connect connector is still installed in the workspace.";
+    return "Slack rejected Groundstation's token. Check the Vercel Connect connector is still installed in the workspace.";
   }
   if (error.code === "ratelimited") {
-    return "Slack is rate limiting the intranet. Wait a minute and sync again.";
+    return "Slack is rate limiting Groundstation. Wait a minute and sync again.";
   }
   if (error.code) {
     return `Slack refused the request: ${error.code}`;
@@ -352,7 +352,7 @@ export async function syncSlackDirectory(): Promise<PortalManagementResult> {
   return {
     ok: true,
     message: summary
-      ? `Slack synced. ${summary.matched} matched, ${summary.unmatched} not in the intranet.${guestNote}`
+      ? `Slack synced. ${summary.matched} matched, ${summary.unmatched} not in Groundstation.${guestNote}`
       : "Slack synced.",
   };
 }
@@ -367,7 +367,7 @@ export async function changePortalAccess(input: {
     !isValidPersonId(input.personId) ||
     !portalAccessStatuses.includes(input.status)
   ) {
-    return { ok: false, message: "Intranet access could not be changed." };
+    return { ok: false, message: "Groundstation access could not be changed." };
   }
 
   const supabase = await createClient();
@@ -381,7 +381,7 @@ export async function changePortalAccess(input: {
   if (error) {
     return {
       ok: false,
-      message: messageFor(error, "Intranet access could not be changed."),
+      message: messageFor(error, "Groundstation access could not be changed."),
     };
   }
 
@@ -389,8 +389,8 @@ export async function changePortalAccess(input: {
 
   const suspending = input.status === "suspended";
   const baseMessage = suspending
-    ? "Intranet access suspended. Open sessions were signed out."
-    : "Intranet access restored.";
+    ? "Groundstation access suspended. Open sessions were signed out."
+    : "Groundstation access restored.";
 
   // Portal access and the Norstec account move together in both directions.
   // Suspending someone who keeps their Google sign-in has not really suspended
@@ -455,8 +455,8 @@ export async function changePortalAdministrator(input: {
   return {
     ok: true,
     message: input.isAdministrator
-      ? "Intranet administrator role granted."
-      : "Intranet administrator role revoked.",
+      ? "Groundstation administrator role granted."
+      : "Groundstation administrator role revoked.",
   };
 }
 
@@ -845,7 +845,7 @@ async function applyWorkspaceSuspension(input: {
       ok: false,
       message: messageFor(
         error,
-        "Google was updated, but the intranet could not record it. Try again.",
+        "Google was updated, but Groundstation could not record it. Try again.",
       ),
     };
   }
@@ -921,7 +921,7 @@ export async function setWorkspaceAccountSuspension(input: {
 }
 
 const SUPER_ADMIN_REFUSAL =
-  "This is a Google super administrator, and the intranet's delegated role cannot change one. Do it in the Google Admin console, or remove the super administrator role there first.";
+  "This is a Google super administrator, and Groundstation's delegated role cannot change one. Do it in the Google Admin console, or remove the super administrator role there first.";
 
 /**
  * Read from the portal's own copy rather than from Google. The directory has
@@ -959,9 +959,8 @@ function revalidateOrganizationAccessViews() {
 /**
  * What a domain would capture, before it captures anything. Registering one
  * turns every address on it into an organization address — not the person's own
- * to remove, and under an automatic policy a membership — so the number of
- * addresses it would take is the difference between a domain being exactly
- * right and being a typo.
+ * to remove — and can automatically approve a later access request from a
+ * Google account that proves the same hosted domain.
  */
 export async function previewOrganizationDomain(input: {
   domain: string;
@@ -1094,7 +1093,35 @@ export async function completeOrganizationDomainVerification(input: {
   revalidateOrganizationAccessViews();
   return {
     ok: true,
-    message: "Domain verified. Automatic membership remains enabled.",
+    message:
+      "Domain verified. A first request from a matching organization account can now be approved automatically.",
+  };
+}
+
+export async function trustOrganizationDomain(input: {
+  domain: string;
+  organizationId: number;
+}): Promise<PortalManagementResult> {
+  await requirePortalAdminAccess();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("trust_organization_domain", {
+    p_domain: input.domain.trim().toLowerCase(),
+    p_organization_id: input.organizationId,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: messageFor(error, "That domain mapping could not be trusted."),
+    };
+  }
+
+  revalidateOrganizationAccessViews();
+  return {
+    ok: true,
+    message:
+      "Domain mapping trusted. Matching requests can now be approved automatically.",
   };
 }
 
@@ -1117,27 +1144,4 @@ export async function removeOrganizationDomain(input: {
 
   revalidateOrganizationAccessViews();
   return { ok: true, message: "Domain removed. Existing memberships are untouched." };
-}
-
-export async function setOrganizationJoinPolicy(input: {
-  organizationId: number;
-  policy: string;
-}): Promise<PortalManagementResult> {
-  await requirePortalAdminAccess();
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("set_organization_domain_join_policy", {
-    p_organization_id: input.organizationId,
-    p_policy: input.policy,
-  });
-
-  if (error) {
-    return {
-      ok: false,
-      message: messageFor(error, "The joining rule could not be changed."),
-    };
-  }
-
-  revalidateOrganizationAccessViews();
-  return { ok: true, message: "Joining rule changed." };
 }

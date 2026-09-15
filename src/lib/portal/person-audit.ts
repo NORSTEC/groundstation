@@ -61,7 +61,7 @@ const SELECT_COLUMNS = `id, action, created_at, details, actor_person_id, target
 // pathological history cannot turn the page into a scroll of hundreds of rows.
 const MAX_EVENTS = 120;
 
-// An intranet-wide history is longer-lived than one person's, so it gets its own,
+// A Groundstation-wide history is longer-lived than one person's, so it gets its own,
 // larger cap.
 const MAX_LOG_EVENTS = 200;
 
@@ -171,7 +171,7 @@ function requestTypeLabel(type: string | null) {
 // Every RPC stamps where it was called from, and the raw value is a database
 // token rather than something an administrator should have to read.
 function sourceLabel(source: string | null) {
-  if (source === "portal_management") return "Intranet management";
+  if (source === "portal_management") return "Groundstation management";
   if (source === "self_service") return "Requested by the person themselves";
   if (source === "database_admin") return "Database administrator";
   if (source === "retention_expiry") return "Automatic, retention period expired";
@@ -195,16 +195,16 @@ function yesNo(value: boolean | null) {
 function describe(action: string, details: Record<string, unknown> | null) {
   switch (action) {
     case "portal_access.active":
-      return "Intranet access activated";
+      return "Groundstation access activated";
     case "portal_access.suspended":
-      return "Intranet access suspended";
+      return "Groundstation access suspended";
     case "portal_access.deactivated":
-      return "Intranet access deactivated";
+      return "Groundstation access deactivated";
     case "portal_administrator.granted":
     case "portal_admin.assigned":
-      return "Intranet administrator role granted";
+      return "Groundstation administrator role granted";
     case "portal_administrator.revoked":
-      return "Intranet administrator role revoked";
+      return "Groundstation administrator role revoked";
     case "membership.role_changed":
       return text(details, "role") === "organization_admin"
         ? "Organization administrator role granted"
@@ -391,7 +391,7 @@ function buildFields(
     case "portal_access.suspended":
     case "portal_access.deactivated":
       add(
-        "Intranet access change",
+        "Groundstation access change",
         `${accessStatusLabel(text(details, "previous_status"))} → ${accessStatusLabel(
           row.action.slice("portal_access.".length),
         )}`,
@@ -401,12 +401,12 @@ function buildFields(
 
     case "portal_administrator.granted":
     case "portal_admin.assigned":
-      add("Role change", "Member → Intranet administrator");
+      add("Role change", "Member → Groundstation administrator");
       add("Performed from", sourceLabel(text(details, "source")));
       break;
 
     case "portal_administrator.revoked":
-      add("Role change", "Intranet administrator → Member");
+      add("Role change", "Groundstation administrator → Member");
       add("Performed from", sourceLabel(text(details, "source")));
       break;
 
@@ -523,7 +523,7 @@ function buildFields(
 
     case "person.restored":
       add(
-        "Intranet access restored to",
+        "Groundstation access restored to",
         accessStatusLabel(text(details, "restored_access_status")),
       );
       break;

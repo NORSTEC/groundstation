@@ -6,8 +6,8 @@ import {
   completeOrganizationDomainVerification,
   previewOrganizationDomain,
   removeOrganizationDomain,
-  setOrganizationJoinPolicy,
   startOrganizationDomainVerification,
+  trustOrganizationDomain,
   type PortalManagementResult,
 } from "@/app/(portal)/admin/actions";
 import { ConfirmDialog } from "@/components/portal/confirm-dialog";
@@ -17,27 +17,14 @@ export type OrganizationAccess = {
   domains: Array<{
     domain: string;
     verifiedAt: string | null;
-    verificationMethod: "legacy_admin_attestation" | "dns_txt";
+    verificationMethod:
+      | "legacy_admin_attestation"
+      | "dns_txt"
+      | "portal_admin_attestation";
   }>;
   id: number;
-  joinPolicy: "auto" | "request";
   name: string;
 };
-
-const joinPolicies = [
-  {
-    description:
-      "Signing in with an account on a DNS-verified domain makes the person an active member straight away.",
-    label: "Join automatically",
-    value: "auto",
-  },
-  {
-    description:
-      "The person is sent to Request access with this organization already filled in, and an administrator approves or declines it in Access review.",
-    label: "Approve each person",
-    value: "request",
-  },
-] as const;
 
 type Preview = {
   addressCount: number;
@@ -56,10 +43,20 @@ type DomainVerification = {
 function verificationStatusLabel(
   domain: OrganizationAccess["domains"][number],
 ) {
-  if (!domain.verifiedAt) return "Not verified";
+  if (!domain.verifiedAt) return "Not trusted";
   return domain.verificationMethod === "dns_txt"
     ? "DNS verified"
-    : "Verified by administrator (legacy)";
+    : domain.verificationMethod === "portal_admin_attestation"
+      ? "Trusted by portal administrator"
+      : "Legacy mapping — action required";
+}
+
+function isTrustedMapping(domain: OrganizationAccess["domains"][number]) {
+  return Boolean(
+    domain.verifiedAt &&
+      (domain.verificationMethod === "dns_txt" ||
+        domain.verificationMethod === "portal_admin_attestation"),
+  );
 }
 
 export function OrganizationAccessSettings({
@@ -81,14 +78,10 @@ export function OrganizationAccessSettings({
     domain: string;
     organizationName: string;
   } | null>(null);
-  // Switching to automatic joining is the one control here that decides who
-  // gets in without anybody looking, so it asks before it applies rather than
-  // acting on the click that selected it.
-  const [pendingPolicy, setPendingPolicy] = useState<{
-    domainCount: number;
+  const [pendingTrust, setPendingTrust] = useState<{
+    domain: string;
     organizationId: number;
     organizationName: string;
-    policy: (typeof joinPolicies)[number];
   } | null>(null);
   const [toast, setToast] = useState<{
     id: number;
@@ -126,9 +119,9 @@ export function OrganizationAccessSettings({
   }
 
   // Registering a domain turns every address on it into an organization
-  // address, and under an automatic policy into a membership. The number is
-  // what separates a domain that is exactly right from one that is a typo, so
-  // it is shown before anything is written.
+  // address and can make a later access request eligible for automatic
+  // approval. The number separates an exact domain from a typo, so it is shown
+  // before anything is written.
   function checkDomain(organizationId: number) {
     const domain = (domainDrafts[organizationId] ?? "").trim().toLowerCase();
     if (!domain) return;
@@ -281,64 +274,12 @@ export function OrganizationAccessSettings({
                 {organization.name}
               </h2>
 
-              <fieldset className="mt-6 grid gap-3">
-                <legend className="section-label opacity-45">
-                  Accounts on its own domains
-                </legend>
-                <div className="mt-1 grid gap-3 sm:grid-cols-2">
-                  {joinPolicies.map((policy) => {
-                    const isSelected = organization.joinPolicy === policy.value;
-                    return (
-                      <label
-                        className={`portal-surface portal-choice p-4 ${
-                          isSelected ? "portal-choice-selected" : ""
-                        }`}
-                        key={policy.value}
-                      >
-                        <span className="flex items-center gap-3">
-                          <input
-                            checked={isSelected}
-                            className="size-4"
-                            disabled={busy}
-                            name={`join-policy-${organization.id}`}
-                            onChange={() => {
-                              if (policy.value === "auto") {
-                                setPendingPolicy({
-                                  domainCount: organization.domains.filter(
-                                    (domain) => domain.verifiedAt,
-                                  ).length,
-                                  organizationId: organization.id,
-                                  organizationName: organization.name,
-                                  policy,
-                                });
-                                return;
-                              }
-                              run(() =>
-                                setOrganizationJoinPolicy({
-                                  organizationId: organization.id,
-                                  policy: policy.value,
-                                }),
-                              );
-                            }}
-                            type="radio"
-                            value={policy.value}
-                          />
-                          <span
-                            className={
-                              isSelected ? "font-semibold" : "font-medium"
-                            }
-                          >
-                            {policy.label}
-                          </span>
-                        </span>
-                        <span className="mt-2 block text-sm leading-relaxed opacity-60">
-                          {policy.description}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
+              <p className="mt-4 max-w-[65ch] text-sm leading-relaxed opacity-65">
+                A trusted mapping detects the organization from Google. The
+                person still sends a request; a first membership is approved
+                automatically. Ended, suspended and planned memberships always
+                require review.
+              </p>
 
               <div className="mt-8">
                 <h3 className="section-label opacity-45">Domains</h3>
@@ -356,37 +297,61 @@ export function OrganizationAccessSettings({
                           aria-hidden="true"
                           className="material-symbols-outlined text-[1.05rem]"
                         >
-                          {domain.verifiedAt ? "verified" : "warning"}
+                          {isTrustedMapping(domain) ? "verified" : "warning"}
                         </span>
                         {verificationStatusLabel(domain)}
                       </span>
-                      {!domain.verifiedAt && (
-                        <button
-                          className="portal-button ml-auto"
-                          disabled={busy}
-                          onClick={() =>
-                            beginVerification(organization.id, domain.domain)
-                          }
-                          type="button"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="material-symbols-outlined text-[1.1rem]"
+                      {(!domain.verifiedAt ||
+                        domain.verificationMethod ===
+                          "legacy_admin_attestation") && (
+                        <div className="ml-auto flex flex-wrap gap-2">
+                          <button
+                            className="portal-button"
+                            disabled={busy}
+                            onClick={() =>
+                              setPendingTrust({
+                                domain: domain.domain,
+                                organizationId: organization.id,
+                                organizationName: organization.name,
+                              })
+                            }
+                            type="button"
                           >
+                            <span
+                              aria-hidden="true"
+                              className="material-symbols-outlined text-[1.1rem]"
+                            >
+                              verified_user
+                            </span>
+                            Trust mapping
+                          </button>
+                          <button
+                            className="portal-button"
+                            disabled={busy}
+                            onClick={() =>
+                              beginVerification(organization.id, domain.domain)
+                            }
+                            type="button"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="material-symbols-outlined text-[1.1rem]"
+                            >
+                              {pendingAction ===
+                              `start-verification:${organization.id}:${domain.domain}`
+                                ? "progress_activity"
+                                : "domain_verification"}
+                            </span>
                             {pendingAction ===
                             `start-verification:${organization.id}:${domain.domain}`
-                              ? "progress_activity"
-                              : "domain_verification"}
-                          </span>
-                          {pendingAction ===
-                          `start-verification:${organization.id}:${domain.domain}`
-                            ? "Preparing…"
-                            : "Verify ownership"}
-                        </button>
+                              ? "Preparing…"
+                              : "Verify with DNS"}
+                          </button>
+                        </div>
                       )}
                       <button
                         className={`portal-button ${
-                          domain.verifiedAt ? "ml-auto" : ""
+                          isTrustedMapping(domain) ? "ml-auto" : ""
                         }`}
                         disabled={busy}
                         onClick={() =>
@@ -568,43 +533,57 @@ export function OrganizationAccessSettings({
                       {preview.addressCount === 1
                         ? "one address"
                         : `${preview.addressCount} addresses`}{" "}
-                      the intranet already holds.{" "}
-                      {organization.joinPolicy === "auto"
-                        ? `At most ${
-                            preview.wouldJoinCount === 1
-                              ? "one of them"
-                              : `${preview.wouldJoinCount} of them`
-                          } would join ${
-                            organization.name
-                          } as they sign in — only the ones whose Google account belongs to the Workspace itself.`
-                        : `At most ${
-                            preview.wouldJoinCount === 1
-                              ? "one of them"
-                              : `${preview.wouldJoinCount} of them`
-                          } would be sent to a request rather than joining, because this organization asks first.`}
+                      Groundstation already holds.{" "}
+                      {`At most ${
+                        preview.wouldJoinCount === 1
+                          ? "one of them"
+                          : `${preview.wouldJoinCount} of them`
+                      } has a Google account that can prove this hosted domain. Once the mapping is trusted, a first membership is approved only after that person submits an access request.`}
                     </p>
-                    <button
-                      className="portal-button mt-5"
-                      disabled={busy}
-                      onClick={() =>
-                        beginVerification(organization.id, preview.domain)
-                      }
-                      type="button"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="material-symbols-outlined text-[1.1rem]"
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        className="portal-button"
+                        disabled={busy}
+                        onClick={() =>
+                          setPendingTrust({
+                            domain: preview.domain,
+                            organizationId: organization.id,
+                            organizationName: organization.name,
+                          })
+                        }
+                        type="button"
                       >
+                        <span
+                          aria-hidden="true"
+                          className="material-symbols-outlined text-[1.1rem]"
+                        >
+                          verified_user
+                        </span>
+                        Trust mapping
+                      </button>
+                      <button
+                        className="portal-button"
+                        disabled={busy}
+                        onClick={() =>
+                          beginVerification(organization.id, preview.domain)
+                        }
+                        type="button"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="material-symbols-outlined text-[1.1rem]"
+                        >
+                          {pendingAction ===
+                          `start-verification:${organization.id}:${preview.domain}`
+                            ? "progress_activity"
+                            : "domain_verification"}
+                        </span>
                         {pendingAction ===
                         `start-verification:${organization.id}:${preview.domain}`
-                          ? "progress_activity"
-                          : "domain_verification"}
-                      </span>
-                      {pendingAction ===
-                      `start-verification:${organization.id}:${preview.domain}`
-                        ? `Preparing ${preview.domain}…`
-                        : `Verify ownership of ${preview.domain}`}
-                    </button>
+                          ? `Preparing ${preview.domain}…`
+                          : `Verify ${preview.domain} with DNS`}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -613,38 +592,36 @@ export function OrganizationAccessSettings({
         })}
       </div>
 
-      {pendingPolicy && (
+      {pendingTrust && (
         <ConfirmDialog
           busy={busy}
-          confirmIcon="how_to_reg"
-          confirmLabel="Let them join"
-          onCancel={() => setPendingPolicy(null)}
+          confirmIcon="verified_user"
+          confirmLabel="Trust mapping"
+          onCancel={() => setPendingTrust(null)}
           onConfirm={() => {
-            const { organizationId, policy } = pendingPolicy;
-            setPendingPolicy(null);
+            const { domain, organizationId } = pendingTrust;
+            setPendingTrust(null);
             run(() =>
-              setOrganizationJoinPolicy({
+              trustOrganizationDomain({
+                domain,
                 organizationId,
-                policy: policy.value,
               }),
             );
           }}
-          title={`Let ${pendingPolicy.organizationName} accounts join without review?`}
+          title={`Trust ${pendingTrust.domain} for ${pendingTrust.organizationName}?`}
         >
           <p>
-            Anybody signing in with a Google account on{" "}
-            {pendingPolicy.domainCount === 0
-              ? "a domain after it is DNS verified"
-              : pendingPolicy.domainCount === 1
-                ? "its verified domain"
-                : `one of its ${pendingPolicy.domainCount} verified domains`}{" "}
-            becomes an active member of {pendingPolicy.organizationName} at that
-            moment, appears in its member directory, and sees everything a member
-            sees. No request is created and nothing reaches Access review.
+            This records that{" "}
+            <span className="font-medium">{pendingTrust.domain}</span> belongs
+            to {pendingTrust.organizationName} without DNS proof. Confirm only
+            after checking the domain through an official website or a known
+            contact at the organization.
           </p>
           <p className="mt-3">
-            People whose membership here has ended are the exception: they are
-            sent to Request access instead, and an administrator decides.
+            A Google account carrying this hosted-domain claim will have the
+            organization detected automatically. A first membership is approved
+            after the person submits the request; previous or suspended
+            memberships still require a human decision.
           </p>
         </ConfirmDialog>
       )}
