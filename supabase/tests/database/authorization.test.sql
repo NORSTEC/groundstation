@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(333);
+select plan(341);
 
 -- DNS itself is checked by the server action. Database tests exercise the
 -- two guarded RPCs with a fixed hash so no test can use the retired direct-add
@@ -601,17 +601,41 @@ select is(
   'creating a new profile completes organization onboarding'
 );
 
-select ok(
-  exists (
-    select 1
+select is(
+  (
+    select count(*)
     from public.memberships as membership
     join public.portal_accounts as account
       on account.person_id = membership.person_id
     where account.auth_user_id = '11111111-1111-4111-8111-111111111111'
-      and membership.status = 'active'
   ),
-  'a verified Norstec Google user receives active membership'
+  0::bigint,
+  'completing organization onboarding still creates no membership before a request'
 );
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","aal":"aal2"}',
+  true
+);
+
+select lives_ok(
+  $$
+    select public.submit_access_request(
+      (select id from public.organizations where slug = 'norstec'),
+      'Member',
+      'Admin',
+      'Information Technology and Informatics',
+      3::smallint,
+      'Joining Groundstation',
+      'organization'
+    )
+  $$,
+  'a Norstec organization account explicitly submits its access request'
+);
+
+reset role;
 
 select is(
   (
@@ -622,7 +646,7 @@ select is(
     where account.auth_user_id = '11111111-1111-4111-8111-111111111111'
   ),
   'member',
-  'domain provisioning grants only the member role'
+  'automatic request approval grants only the member role'
 );
 
 select ok(
@@ -1044,12 +1068,12 @@ select is(
   (
     select starts_on
     from public.memberships
-    where person_id = (select private.current_person_id())
+  where person_id = (select private.current_person_id())
       and organization_id = (
         select id from public.organizations where slug = 'norstec'
       )
   ),
-  null::date,
+  current_date,
   'editing visual experience did not alter the authoritative membership'
 );
 
@@ -2283,6 +2307,25 @@ values (
   false
 );
 
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"99999999-9999-4999-8999-999999999999","role":"authenticated","aal":"aal2"}',
+  true
+);
+
+select public.submit_access_request(
+  (select id from public.organizations where slug = 'norstec'),
+  'Returning',
+  'Member',
+  'Information Technology and Informatics',
+  3::smallint,
+  'Please add me',
+  'organization'
+);
+
+reset role;
+
 select is(
   (
     select count(*)
@@ -2291,7 +2334,7 @@ select is(
     where person.full_name = 'Returning Member'
   ),
   1::bigint,
-  'first sign-in with an approved organization domain creates the membership'
+  'the first explicit request from an approved organization domain creates the membership'
 );
 
 delete from public.memberships
@@ -2384,6 +2427,24 @@ values
     false
   );
 
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"88888888-8888-4888-8888-888888888888","role":"authenticated","aal":"aal2"}',
+  true
+);
+
+select public.submit_access_request(
+  (select id from public.organizations where slug = 'norstec'),
+  'Unlink',
+  'Member',
+  'Information Technology and Informatics',
+  3::smallint,
+  'Please add me',
+  'organization'
+);
+
+reset role;
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -3180,6 +3241,17 @@ select set_config(
   true
 );
 select public.complete_own_organization_onboarding();
+
+select public.submit_access_request(
+  (select id from public.organizations where slug = 'orbit-ntnu'),
+  'Unlink',
+  'Subject',
+  'Information Technology and Informatics',
+  3::smallint,
+  'Please add me',
+  'organization'
+);
+
 reset role;
 
 -- The personal account joins the same person, which is where linking leaves it.
@@ -3721,7 +3793,7 @@ insert into public.organizations (slug, name, status)
 values ('ignite', 'Ignite', 'active');
 
 insert into public.people (full_name, portal_access_status, source)
-values ('Ignite Import', 'unclaimed', 'manual');
+values ('Ignite Import', 'active', 'manual');
 
 insert into public.person_emails (
   person_id, email, email_type, is_primary, source
@@ -4107,7 +4179,7 @@ select is(
     (select id from public.people where full_name = 'Ignite Import'),
     'legacy.ignite.no'
   ) ->> 'outcome',
-  'domain_not_verified',
+  'domain_not_trusted',
   'a legacy administrator attestation cannot grant membership'
 );
 
@@ -4116,8 +4188,55 @@ select is(
     (select id from public.people where full_name = 'Ignite Import'),
     'unregistered.ignite.no'
   ) ->> 'outcome',
-  'domain_not_verified',
+  'domain_not_trusted',
   'an unregistered hosted domain cannot grant membership'
+);
+
+set local role authenticated;
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","aal":"aal1"}',
+  true
+);
+
+select throws_ok(
+  $$
+    select public.trust_organization_domain(
+      (select id from public.organizations where slug = 'ignite'),
+      'legacy.ignite.no'
+    )
+  $$,
+  '42501',
+  'not_authorized',
+  'a portal administrator cannot trust a domain mapping without MFA'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","aal":"aal2"}',
+  true
+);
+
+select is(
+  (
+    select public.trust_organization_domain(
+      (select id from public.organizations where slug = 'ignite'),
+      'legacy.ignite.no'
+    ) ->> 'domain'
+  ),
+  'legacy.ignite.no',
+  'a portal administrator at AAL2 can trust a checked domain mapping'
+);
+
+reset role;
+
+select is(
+  private.apply_domain_join(
+    (select id from public.people where full_name = 'Ignite Import'),
+    'legacy.ignite.no'
+  ) ->> 'outcome',
+  'request',
+  'a manually trusted mapping detects the organization without creating membership'
 );
 
 select is(
@@ -4334,8 +4453,62 @@ select set_config(
 
 select is(
   (select public.apply_own_domain_join() ->> 'outcome'),
-  'joined',
-  'a policy change reaches people already signed up, on their next sign-in'
+  'request',
+  'a trusted organization account is recognized but still has to submit a request'
+);
+
+select is(
+  (
+    select count(*)
+    from public.memberships as membership
+    join public.people as person on person.id = membership.person_id
+    where person.full_name = 'Join Applicant'
+  ),
+  0::bigint,
+  'recognition alone creates no membership'
+);
+
+select lives_ok(
+  $$
+    select public.submit_access_request(
+      (select id from public.organizations where slug = 'orbit-ntnu'),
+      'Join',
+      'Applicant',
+      'Information Technology and Informatics',
+      2::smallint,
+      'Please add me',
+      'organization'
+    )
+  $$,
+  'the recognized organization account submits the required request'
+);
+
+select is(
+  (
+    select request.status
+    from public.access_requests as request
+    join public.people as person on person.id = request.person_id
+    where person.full_name = 'Join Applicant'
+    order by request.created_at desc, request.id desc
+    limit 1
+  ),
+  'approved',
+  'a first request from the trusted hosted domain is approved automatically'
+);
+
+select is(
+  (
+    select organization.slug
+    from public.access_requests as request
+    join public.people as person on person.id = request.person_id
+    join public.organizations as organization
+      on organization.id = request.organization_id
+    where person.full_name = 'Join Applicant'
+    order by request.created_at desc, request.id desc
+    limit 1
+  ),
+  'joinlab',
+  'the signed hosted-domain mapping overrides a different organization submitted by the form'
 );
 
 select is(
@@ -4345,8 +4518,8 @@ select is(
     join public.people as person on person.id = membership.person_id
     where person.full_name = 'Join Applicant'
   ),
-  'domain',
-  'the membership records that a domain provisioned it'
+  'access_request',
+  'the membership records that an explicit access request created it'
 );
 
 -- A consumer Google account can carry a work address for years after the

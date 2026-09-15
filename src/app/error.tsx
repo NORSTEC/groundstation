@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { FailureNotice } from "@/components/failure-notice";
 
 /**
- * Catches a failed render anywhere outside the intranet shell — the sign-in
+ * Catches a failed render anywhere outside Groundstation shell — the sign-in
  * page, the access request form, the legal pages.
  */
 export default function AppError({

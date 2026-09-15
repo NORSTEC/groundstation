@@ -16,7 +16,7 @@ export function LegalShell({ children }: { children: ReactNode }) {
       <header className="border-b border-moody">
         <div className="mx-auto flex h-24 w-full max-w-[100rem] items-center justify-between px-5 sm:px-8 lg:px-16 xl:px-20 2xl:px-28">
           <Link
-            aria-label="NORSTEC intranet"
+            aria-label="NORSTEC Groundstation"
             className="inline-flex w-fit items-center gap-4"
             href="/"
           >
@@ -27,6 +27,7 @@ export function LegalShell({ children }: { children: ReactNode }) {
                 className="portal-sidebar-brand-color object-contain"
                 fill
                 priority
+                sizes="44px"
                 src="/images/logo.png"
               />
             </span>
@@ -35,7 +36,7 @@ export function LegalShell({ children }: { children: ReactNode }) {
                 NORSTEC
               </span>
               <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.34em] opacity-55">
-                Intranet
+                Groundstation
               </span>
             </span>
           </Link>

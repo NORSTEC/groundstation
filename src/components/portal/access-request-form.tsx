@@ -23,13 +23,13 @@ type Organization = { id: number; name: string };
 const requestTypes = [
   {
     description:
-      "You were a member of a NORSTEC organization and want to keep intranet access. An intranet administrator reviews the request.",
+      "You were a member of a NORSTEC organization and want to keep Groundstation access. A Groundstation administrator reviews the request.",
     label: "Alumni",
     value: "alumni",
   },
   {
     description:
-      "You are currently a member of a NORSTEC organization. That organization reviews the request.",
+      "You are currently a member of a NORSTEC organization.",
     label: "Member of an organization",
     value: "organization",
   },
@@ -45,6 +45,7 @@ export function AccessRequestForm({
   recaptchaSiteKey,
   scriptNonce,
   studyYear,
+  willAutoApprove,
 }: {
   errorMessage?: string;
   firstName: string;
@@ -55,6 +56,7 @@ export function AccessRequestForm({
   recaptchaSiteKey: string;
   scriptNonce?: string;
   studyYear: number | null;
+  willAutoApprove?: boolean;
 }) {
   // Arriving with an organization account already answers the first question
   // the form asks, and for somebody who was a member before, an empty form
@@ -142,15 +144,18 @@ export function AccessRequestForm({
 
       {provenOrganization && (
         <section className="portal-surface border-copper p-5 sm:col-span-2 sm:p-6">
-          <h2 className="text-h3">
-            {isReturningMember
-              ? `You were a member of ${provenOrganization.name}`
-              : `${provenOrganization.name} reviews who joins`}
+          <h2 className="flex items-center gap-2 text-h3">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              domain_verification
+            </span>
+            Organization account recognized
           </h2>
           <p className="mt-3 max-w-[65ch] text-sm leading-relaxed opacity-65">
             {isReturningMember
-              ? `That membership has ended, so an administrator has to approve you again before you get back in. ${provenOrganization.name} is selected below.`
-              : `Signing in with one of its Google accounts is not enough on its own there. ${provenOrganization.name} is selected below — send the request and an administrator decides.`}
+              ? `Your previous membership in ${provenOrganization.name} has ended, so an administrator must review this request before it can be reactivated.`
+              : willAutoApprove
+                ? `Google verified that this account belongs to ${provenOrganization.name}. Send the request and it will be approved automatically.`
+                : `Google verified that this account belongs to ${provenOrganization.name}. An administrator must review the existing membership before it can be changed.`}
           </p>
         </section>
       )}
@@ -228,45 +233,68 @@ export function AccessRequestForm({
 
       {isOrganizationRequest && (
         <>
-          {!provenOrganization && (
-            <div className="flex items-start gap-3 text-sm leading-relaxed opacity-65 sm:col-span-2">
-              <span
-                aria-hidden="true"
-                className="material-symbols-outlined mt-0.5 shrink-0 text-base"
-              >
-                info
-              </span>
-              <p>
-                If your organization gave you an organization email address,
-                sign in with that Google account instead. Some organizations let
-                you straight in that way; the rest still review the request, but
-                they know the account is theirs.
-              </p>
+          {provenOrganization ? (
+            <div className="grid gap-2 sm:col-span-2">
+              <span className="section-label opacity-45">Organization</span>
+              <div className="portal-field flex items-center justify-between gap-4">
+                <span className="font-medium">{provenOrganization.name}</span>
+                <span className="inline-flex items-center gap-1.5 text-sm opacity-60">
+                  <span
+                    aria-hidden="true"
+                    className="material-symbols-outlined text-[1.05rem]"
+                  >
+                    verified
+                  </span>
+                  Detected from Google
+                </span>
+              </div>
+              <input
+                name="organizationId"
+                type="hidden"
+                value={provenOrganization.id}
+              />
             </div>
+          ) : (
+            <>
+              <div className="flex items-start gap-3 text-sm leading-relaxed opacity-65 sm:col-span-2">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined mt-0.5 shrink-0 text-base"
+                >
+                  info
+                </span>
+                <p>
+                  If your organization gave you an organization email address,
+                  sign in with that Google account instead. Groundstation can
+                  then detect the organization and approve a first membership
+                  automatically.
+                </p>
+              </div>
+              <label className="grid gap-2 sm:col-span-2">
+                <span className="section-label opacity-45">
+                  Organization{" "}
+                  <span aria-hidden="true" className="text-copper">
+                    *
+                  </span>
+                </span>
+                <select
+                  className="portal-field"
+                  defaultValue=""
+                  name="organizationId"
+                  required
+                >
+                  <option disabled value="">
+                    Select organization
+                  </option>
+                  {organizations.map((organization) => (
+                    <option key={organization.id} value={organization.id}>
+                      {organization.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
           )}
-          <label className="grid gap-2 sm:col-span-2">
-            <span className="section-label opacity-45">
-              Organization{" "}
-              <span aria-hidden="true" className="text-copper">
-                *
-              </span>
-            </span>
-            <select
-              className="portal-field"
-              defaultValue={provenOrganization?.id ?? ""}
-              name="organizationId"
-              required
-            >
-              <option disabled value="">
-                Select organization
-              </option>
-              {organizations.map((organization) => (
-                <option key={organization.id} value={organization.id}>
-                  {organization.name}
-                </option>
-              ))}
-            </select>
-          </label>
         </>
       )}
 
@@ -322,15 +350,13 @@ export function AccessRequestForm({
           the click, which is what this is — a notice, not a consent gate. */}
       <div className="border-t border-moody/20 pt-6 text-sm leading-relaxed opacity-65 sm:col-span-2">
         <p>
-          Sending this shows your name, email address, field of study, study
-          year and message to{" "}
-          {isOrganizationRequest
-            ? "the administrators of the organization you selected"
-            : "NORSTEC intranet administrators"}
-          , so that one of them can decide. If the request is declined, your
-          intranet profile is deleted along with it — the name, the addresses and
-          the Google sign-in — and only a record that a decision was made
-          remains.{" "}
+          {isOrganizationRequest && provenOrganization && willAutoApprove
+            ? "Sending this stores the information above with the automatic decision. The organization is taken from the verified Google account you used, not from this form."
+            : `Sending this shows the information above to ${
+                isOrganizationRequest
+                  ? "the administrators of the organization you selected"
+                  : "NORSTEC Groundstation administrators"
+              }, so that one of them can decide. If the request is declined, your Groundstation profile is deleted with it and only a record that a decision was made remains.`}{" "}
           <a
             className="legal-link"
             href="/privacy"

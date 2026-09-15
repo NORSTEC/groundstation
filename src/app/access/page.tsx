@@ -50,18 +50,12 @@ export default async function AccessPage({
 }: {
   searchParams: Promise<{
     error?: string;
-    organization?: string;
-    returning?: string;
     withdrawn?: string;
   }>;
 }) {
   const access = await getPortalAccess();
   const requestHeaders = await headers();
-  const {
-    error,
-    organization: provenOrganizationSlug,
-    withdrawn,
-  } = await searchParams;
+  const { error, withdrawn } = await searchParams;
 
   if (access.status === "unauthenticated") {
     redirect("/login");
@@ -84,7 +78,7 @@ export default async function AccessPage({
   }
 
   const supabase = await createClient();
-  const [organizationsResult, requestsResult] = await Promise.all([
+  const [organizationsResult, requestsResult, domainDecisionResult] = await Promise.all([
     supabase
       .from("organizations")
       .select("id, name")
@@ -100,60 +94,40 @@ export default async function AccessPage({
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.rpc("apply_own_domain_join"),
   ]);
 
-  if (organizationsResult.error || requestsResult.error) {
+  if (
+    organizationsResult.error ||
+    requestsResult.error ||
+    domainDecisionResult.error
+  ) {
     redirect("/login?error=authorization");
   }
 
-  // The sign-in callback names the organization whose Workspace this account
-  // proved it belongs to. Norstec is kept out of the list on purpose — nobody
-  // asks their way into it — but a Norstec account that needs approval anyway,
-  // because the membership behind it ended, has to be able to ask for the one
-  // organization it is actually about. So the named organization joins the
-  // list whether or not the list would otherwise carry it.
-  //
-  // The parameter only ever selects an organization. Nothing the page says
-  // about the person rests on it: anybody can type it, and a page that read a
-  // claim about somebody out of their own URL would be telling them what they
-  // just told it. Whether they were a member here before is asked of the
-  // database below.
-  const provenOrganization = provenOrganizationSlug
-    ? ((
-        await supabase
-          .from("organizations")
-          .select("id, name")
-          .eq("slug", provenOrganizationSlug)
-          .eq("status", "active")
-          .maybeSingle()
-      ).data as Organization | null)
-    : null;
-
-  const isReturningMember = provenOrganization
-    ? Boolean(
-        (
-          await supabase
-            .from("memberships")
-            .select("id")
-            .eq("person_id", access.profile.personId)
-            .eq("organization_id", provenOrganization.id)
-            .eq("status", "ended")
-            .limit(1)
-            .maybeSingle()
-        ).data,
-      )
-    : false;
+  // This match comes from the Google hosted-domain claim copied from the
+  // signed identity, then resolved through a domain mapping trusted by a
+  // portal administrator. It never comes from a query parameter or form field.
+  const domainDecision = (domainDecisionResult.data ?? {}) as {
+    autoApprove?: boolean;
+    organizationId?: number;
+    organizationName?: string;
+    outcome?: string;
+    returning?: boolean;
+  };
+  const provenOrganization =
+    domainDecision.outcome === "request" &&
+    Number.isSafeInteger(domainDecision.organizationId) &&
+    domainDecision.organizationName
+      ? {
+          id: domainDecision.organizationId as number,
+          name: domainDecision.organizationName,
+        }
+      : null;
+  const isReturningMember = domainDecision.returning === true;
 
   const listedOrganizations = (organizationsResult.data ?? []) as Organization[];
-  const organizations =
-    provenOrganization &&
-    !listedOrganizations.some(
-      (candidate) => candidate.id === provenOrganization.id,
-    )
-      ? [...listedOrganizations, provenOrganization].sort((left, right) =>
-          left.name.localeCompare(right.name),
-        )
-      : listedOrganizations;
+  const organizations = listedOrganizations;
   const latestRequest = requestsResult.data as AccessRequest | null;
   // Declined applicants are deleted and notified by email, so only pending
   // requests can be shown here. See docs/integrations.md.
@@ -171,7 +145,10 @@ export default async function AccessPage({
           />
         </h1>
         <p className="mt-4 max-w-3xl text-sm opacity-60">
-          Signed in as {access.profile.email}. Your request must be approved before you can enter the intranet.
+          Signed in as {access.profile.email}. Everyone sends an access request
+          before entering Groundstation. A recognized organization account is
+          approved automatically; personal accounts are reviewed by an
+          administrator.
         </p>
 
         {pendingRequest ? (
@@ -237,6 +214,7 @@ export default async function AccessPage({
               }
               scriptNonce={requestHeaders.get("x-nonce") ?? undefined}
               studyYear={access.profile.studyYear}
+              willAutoApprove={domainDecision.autoApprove === true}
             />
           </>
         )}

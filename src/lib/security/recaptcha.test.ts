@@ -10,6 +10,7 @@ function response(body: object, ok = true) {
 }
 
 const configured = {
+  expectedHostname: "groundstation.norstec.no",
   nodeEnv: "production",
   secretKey: "secret-key",
   siteKey: "site-key",
@@ -20,6 +21,7 @@ describe("access request reCAPTCHA", () => {
     const fetcher = vi.fn().mockResolvedValue(
       response({
         action: RECAPTCHA_ACTION,
+        hostname: "groundstation.norstec.no",
         score: 0.8,
         success: true,
       }),
@@ -41,11 +43,30 @@ describe("access request reCAPTCHA", () => {
   it.each([
     [{ success: false }, "failed"],
     [
-      { action: "another_action", score: 0.9, success: true },
+      {
+        action: "another_action",
+        hostname: "groundstation.norstec.no",
+        score: 0.9,
+        success: true,
+      },
       "failed",
     ],
     [
-      { action: RECAPTCHA_ACTION, score: 0.49, success: true },
+      {
+        action: RECAPTCHA_ACTION,
+        hostname: "groundstation.norstec.no",
+        score: 0.49,
+        success: true,
+      },
+      "failed",
+    ],
+    [
+      {
+        action: RECAPTCHA_ACTION,
+        hostname: "untrusted.example",
+        score: 0.9,
+        success: true,
+      },
       "failed",
     ],
   ])("rejects an invalid assessment", async (body, reason) => {
@@ -62,6 +83,15 @@ describe("access request reCAPTCHA", () => {
         nodeEnv: "production",
         secretKey: undefined,
         siteKey: "site-key",
+      }),
+    ).resolves.toEqual({ ok: false, reason: "unavailable" });
+  });
+
+  it("fails closed when the production hostname is not configured", async () => {
+    await expect(
+      verifyAccessRequestCaptcha("browser-token", {
+        ...configured,
+        expectedHostname: "",
       }),
     ).resolves.toEqual({ ok: false, reason: "unavailable" });
   });

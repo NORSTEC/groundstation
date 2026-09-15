@@ -68,35 +68,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/onboarding/account", requestUrl.origin));
   }
 
-  // The trigger on auth.users fires on inserts and on changes to the email,
-  // its confirmation or the app metadata — never on an ordinary repeat
-  // sign-in. That was enough while a matching domain was a fact about the
-  // account. It is not enough now that joining is a policy an administrator
-  // can change, so the decision is asked for here, on every sign-in. It is the
-  // same function the trigger calls, and it is idempotent.
-  const { data: joinResult, error: joinError } = await supabase.rpc(
-    "apply_own_domain_join",
-  );
-
-  // A failed decision is not a refusal, and it is not a reason to stop somebody
-  // signing in. It stops being able to *add* a membership, so the checks below
-  // still run and everybody who already has access keeps it; only a person who
-  // would have been admitted by their domain this very second lands on /access
-  // instead, and signing in again gives it to them.
-  //
-  // Blocking here was tried and produced exactly the failure it was meant to
-  // prevent: this function did not yet exist on the deployed database, so every
-  // sign-in in the portal failed at once.
-  if (joinError) {
-    console.error("apply_own_domain_join failed", joinError);
-  }
-
-  const join = (joinResult ?? {}) as {
-    outcome?: string;
-    organizationSlug?: string;
-    returning?: boolean;
-  };
-
   const { data: membership, error: membershipError } = await supabase
     .from("memberships")
     .select("id")
@@ -117,17 +88,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/", requestUrl.origin));
   }
 
-  // A proven organization account that still needs approval carries the answer
-  // to the first question the request form asks. Somebody who was a member
-  // before meets an empty form otherwise, and reads it as the portal having
-  // forgotten them.
-  const accessUrl = new URL("/access", requestUrl.origin);
-  if (join.outcome === "request" && join.organizationSlug) {
-    accessUrl.searchParams.set("organization", join.organizationSlug);
-    if (join.returning) {
-      accessUrl.searchParams.set("returning", "true");
-    }
-  }
-
-  return NextResponse.redirect(accessUrl);
+  // The access page derives any organization match again from the signed
+  // identity. It is never carried in a user-editable URL parameter.
+  return NextResponse.redirect(new URL("/access", requestUrl.origin));
 }

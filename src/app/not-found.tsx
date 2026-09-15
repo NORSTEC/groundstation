@@ -12,7 +12,7 @@ export default function NotFound() {
           >
             home
           </span>
-          Go to the intranet
+          Go to Groundstation
         </Link>
       }
       description="The address does not match anything here. It may have been renamed, or the thing it pointed at may have been removed."

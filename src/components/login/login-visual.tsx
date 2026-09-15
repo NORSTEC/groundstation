@@ -122,13 +122,20 @@ export function MobileLoginHeader() {
             animate={{ opacity: resolvedTheme === "dark" ? 1 : 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.8, 0.5, 1] }}
           >
-            <Image src="/images/logo.png" alt="" fill priority className="object-contain" />
+            <Image
+              src="/images/logo.png"
+              alt=""
+              fill
+              priority
+              sizes="44px"
+              className="object-contain"
+            />
           </motion.div>
         </div>
         <div>
           <p className="-ml-[0.06em] text-xl font-light uppercase tracking-[0.14em]">NORSTEC</p>
           <p className="mt-0.5 text-left text-xs font-medium uppercase tracking-[0.34em] opacity-55">
-            Intranet
+            Groundstation
           </p>
         </div>
       </div>

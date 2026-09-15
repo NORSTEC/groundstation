@@ -6,7 +6,6 @@ import { requirePortalAdminAccess } from "@/lib/auth/access";
 import { createClient } from "@/lib/supabase/server";
 
 type OrganizationRow = {
-  domain_join_policy: string;
   id: number;
   name: string;
 };
@@ -14,7 +13,10 @@ type OrganizationRow = {
 type DomainRow = {
   domain: string;
   verifiedAt: string | null;
-  verificationMethod: "legacy_admin_attestation" | "dns_txt";
+  verificationMethod:
+    | "legacy_admin_attestation"
+    | "dns_txt"
+    | "portal_admin_attestation";
 };
 
 export default async function OrganizationAccessPage() {
@@ -23,7 +25,7 @@ export default async function OrganizationAccessPage() {
   const supabase = await createClient();
   const organizationsResult = await supabase
     .from("organizations")
-    .select("id, name, domain_join_policy")
+    .select("id, name")
     .eq("status", "active")
     .order("name");
 
@@ -55,7 +57,6 @@ export default async function OrganizationAccessPage() {
           verificationMethod: domain.verificationMethod,
         })),
         id: row.id,
-        joinPolicy: row.domain_join_policy as OrganizationAccess["joinPolicy"],
         name: row.name,
       };
     }),
@@ -64,9 +65,9 @@ export default async function OrganizationAccessPage() {
   return (
     <>
       <p className="max-w-2xl text-sm opacity-55">
-        Which email domains belong to which organization, and what a Google
-        account on one of them is worth. The domain proves who somebody is; the
-        rule beside it decides whether that is enough to let them in.
+        Which Google Workspace domains map to each organization. DNS
+        verification is strongest; for launch, a portal administrator can
+        trust a mapping after checking it through an official source.
       </p>
 
       <div className="mt-10">

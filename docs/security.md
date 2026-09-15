@@ -6,7 +6,7 @@
 | --- | --- |
 | Browser → database | JWT, RLS, grants and validated RPCs |
 | Google → portal identity | verified OAuth identity and stable provider subject |
-| Domain → membership | Google hosted-domain claim plus DNS ownership proof |
+| Domain → automatic request approval | Google hosted-domain claim plus a portal-admin-trusted mapping |
 | Member → administration | database role check plus AAL2/MFA |
 | Application → integrations | server-only credentials or Vercel OIDC |
 
@@ -27,7 +27,7 @@ decision is enforced end to end.
 - Role changes, access decisions, lifecycle changes, linking and merge are
   audited in the same transaction.
 - Foreign-key indexes cover deletion, merge and queue cleanup paths.
-- The 319-assertion pgTAP suite runs against a real database in CI.
+- The 341-assertion pgTAP suite runs against a real database in CI.
 
 ## Authentication
 
@@ -58,8 +58,8 @@ decision is enforced end to end.
 | Threat | Control |
 | --- | --- |
 | Reissued Workspace address inherits old account | pre-user hook compares Google subject |
-| Forged `hd` or provider metadata | sanitize from `auth.identities`; domain join uses trusted copy |
-| Typo registers a broad domain | reserved list, preview, MFA and DNS TXT proof |
+| Forged `hd` or provider metadata | sanitize from `auth.identities`; access decisions use the trusted copy |
+| Wrong domain maps to an organization | reserved list, preview, AAL2 confirmation and audit; DNS TXT remains the strongest proof |
 | Suspended admin retains management access | active person/membership checks and AAL2 |
 | Hidden member leaks through another relation | RLS covers people, memberships, teams, email and experience |
 | Merge grants role or loses sync state | pre-merge guards, ordered locks and freshness rules |

@@ -1,4 +1,4 @@
-# NORSTEC Portal
+# NORSTEC Groundstation
 
 Internal portal for NORSTEC and member organizations. It manages people,
 memberships, teams, roles, alumni access, Google sign-in and connected account
