@@ -15,7 +15,7 @@ describe("storage purge cron", () => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = "test-cron-secret";
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
+    process.env.SUPABASE_STORAGE_PURGE_SECRET_KEY = "sb_secret_test";
     mocks.createClient.mockReturnValue({
       rpc: mocks.rpc,
       storage: { from: () => ({ remove: mocks.remove }) },
@@ -30,6 +30,7 @@ describe("storage purge cron", () => {
 
   afterEach(() => {
     delete process.env.CRON_SECRET;
+    delete process.env.SUPABASE_STORAGE_PURGE_SECRET_KEY;
   });
 
   it("rejects callers without Vercel's bearer secret", async () => {

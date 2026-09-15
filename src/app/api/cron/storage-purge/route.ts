@@ -4,6 +4,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export const runtime = "nodejs";
 
+/** Verifies that the request was signed by Vercel's cron scheduler. */
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
   const supplied = request.headers.get("authorization")?.replace(/^Bearer /, "");
@@ -14,18 +15,19 @@ function authorized(request: Request) {
     timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
+/** Removes only avatar paths that the database has already queued for purge. */
 export async function GET(request: Request) {
   if (!authorized(request)) {
     return Response.json({ error: "not_authorized" }, { status: 401 });
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !publishableKey) {
+  const secretKey = process.env.SUPABASE_STORAGE_PURGE_SECRET_KEY;
+  if (!url || !secretKey) {
     return Response.json({ error: "storage_purge_not_configured" }, { status: 503 });
   }
 
-  const supabase = createClient<Database>(url, publishableKey, {
+  const supabase = createClient<Database>(url, secretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const { data: queued, error: queueError } = await supabase.rpc(

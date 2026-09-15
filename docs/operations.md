@@ -62,6 +62,11 @@ Set production-only values for:
 - `PORTAL_EMAIL_FROM`, `PORTAL_EMAIL_REPLY_TO`, `RESEND_API_KEY`
 - Google Workload Identity values and `GOOGLE_WORKSPACE_DOMAIN`
 - A randomly generated `CRON_SECRET` for the server-only avatar purge job
+- A dedicated Supabase secret key stored as
+  `SUPABASE_STORAGE_PURGE_SECRET_KEY` for that same server-only job. Create a
+  separate key for this component so it can be rotated independently. It has
+  elevated project access, so keep it production-only in Vercel and never use
+  it in a `NEXT_PUBLIC_` variable, a browser, logs or source control.
 - `SLACK_CONNECT_CONNECTOR`
 
 Functions are pinned to `arn1` (Stockholm) in `vercel.json`, because the
