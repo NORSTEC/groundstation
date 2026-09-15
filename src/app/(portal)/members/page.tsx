@@ -11,6 +11,7 @@ type MembershipRow = {
         id: number;
         full_name: string | null;
         avatar_path: string | null;
+        deleted_at: string | null;
         linkedin_url: string | null;
         phone_number: string | null;
       }
@@ -18,6 +19,7 @@ type MembershipRow = {
         id: number;
         full_name: string | null;
         avatar_path: string | null;
+        deleted_at: string | null;
         linkedin_url: string | null;
         phone_number: string | null;
       }>;
@@ -30,6 +32,7 @@ type AlumniPersonRow = {
   id: number;
   full_name: string | null;
   avatar_path: string | null;
+  deleted_at: string | null;
   linkedin_url: string | null;
   phone_number: string | null;
 };
@@ -59,16 +62,17 @@ export default async function MembersPage() {
     supabase
       .from("memberships")
       .select(
-        "status, people (id, full_name, avatar_path, linkedin_url, phone_number), organizations (id, name, slug)",
+        "status, people (id, full_name, avatar_path, deleted_at, linkedin_url, phone_number), organizations (id, name, slug)",
       )
       .in("status", ["active", "ended"]),
     // Alumni granted portal access directly belong to no organization, so
     // they have no membership row to reach them through.
     supabase
       .from("people")
-      .select("id, full_name, avatar_path, linkedin_url, phone_number")
+      .select("id, full_name, avatar_path, deleted_at, linkedin_url, phone_number")
       .not("alumni_access_granted_at", "is", null)
-      .eq("portal_access_status", "active"),
+      .eq("portal_access_status", "active")
+      .is("deleted_at", null),
   ]);
 
   if (membershipsResult.error || alumniResult.error) {
@@ -81,7 +85,7 @@ export default async function MembersPage() {
     const organization = Array.isArray(row.organizations)
       ? row.organizations[0]
       : row.organizations;
-    if (!person || !organization) continue;
+    if (!person || person.deleted_at || !organization) continue;
 
     const member = membersById.get(person.id) ?? {
       id: person.id,
@@ -100,6 +104,7 @@ export default async function MembersPage() {
   }
 
   for (const person of alumniResult.data as AlumniPersonRow[]) {
+    if (person.deleted_at) continue;
     const member = membersById.get(person.id) ?? {
       id: person.id,
       name: person.full_name ?? "Unnamed member",
