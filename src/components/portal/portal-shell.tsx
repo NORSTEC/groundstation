@@ -49,13 +49,13 @@ const administrationNavigation: NavigationItem[] = [
     admin: "organization",
   },
   {
-    label: "Team management",
+    label: "Team settings",
     href: "/administration/teams",
     icon: "group_work",
     admin: "organization",
   },
   {
-    label: "Groundstation management",
+    label: "Management",
     href: "/admin",
     icon: "admin_panel_settings",
     admin: "portal",
@@ -63,7 +63,7 @@ const administrationNavigation: NavigationItem[] = [
 ];
 
 const breadcrumbLabels: Record<string, string> = {
-  admin: "Groundstation management",
+  admin: "Management",
   administration: "Administration",
   "access-requests": "Access review",
   "audit-log": "Audit log",
@@ -324,7 +324,7 @@ function Breadcrumbs() {
       dynamicLabels[href] ??
       (href === "/administration/members" ? "Member status" : undefined) ??
       (href === "/administration/organization" ? "Organization settings" : undefined) ??
-      (href === "/administration/teams" ? "Team management" : undefined) ??
+      (href === "/administration/teams" ? "Team settings" : undefined) ??
       breadcrumbLabels[segment] ??
       decoded.replace(/\b\w/g, (letter) => letter.toUpperCase());
     return [{ href, label }];
