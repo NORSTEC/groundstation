@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(344);
+select plan(345);
 
 -- DNS itself is checked by the server action. Database tests exercise the
 -- two guarded RPCs with a fixed hash so no test can use the retired direct-add
@@ -4817,6 +4817,22 @@ select is(
   ),
   'ended',
   'the bypass through linking is closed'
+);
+
+select is(
+  (
+    select count(*)
+    from public.access_requests as request
+    join public.portal_accounts as account
+      on account.person_id = request.person_id
+    join public.organizations as organization
+      on organization.id = request.organization_id
+    where account.auth_user_id = '77777777-7777-4777-8777-777777777775'
+      and organization.slug = 'joinlab'
+      and request.status = 'pending'
+  ),
+  1::bigint,
+  'linking an organization account creates one access request for review'
 );
 
 

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   }
 
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const { error: linkError } = await linkClient.rpc(
+  const { data: linkResult, error: linkError } = await linkClient.rpc(
     "complete_portal_account_link",
     { p_token_hash: tokenHash },
   );
@@ -88,9 +88,21 @@ export async function GET(request: Request) {
     );
   }
 
+  const accessRequestCreated = Boolean(
+    linkResult &&
+      typeof linkResult === "object" &&
+      !Array.isArray(linkResult) &&
+      linkResult.accessRequestCreated === true,
+  );
+
   return endLinkFlow(
     NextResponse.redirect(
-      new URL("/profile?accountLinked=true", requestUrl.origin),
+      new URL(
+        `/profile?accountLinked=${
+          accessRequestCreated ? "request-sent" : "true"
+        }`,
+        requestUrl.origin,
+      ),
     ),
   );
 }

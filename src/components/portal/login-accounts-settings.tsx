@@ -163,6 +163,10 @@ export function LoginAccountsSettings({
         </span>
         {isLinking ? "Opening Google…" : "Add another Google account"}
       </button>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed opacity-65">
+        Linking an account from another registered organization sends a
+        membership request to that organization for review.
+      </p>
       {error && (
         <Toast key={error.id} message={error.message} status="error" />
       )}
