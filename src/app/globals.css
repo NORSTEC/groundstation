@@ -1224,6 +1224,91 @@ html.theme-switching *::after {
     border-radius: 9999px;
     background: color-mix(in srgb, var(--color-moody) 22%, transparent);
   }
+
+  /* The Workspace directory has three actions per linked account. Give the
+     data columns an explicit layout and let the actions wrap inside their own
+     cell instead of making the entire table wider than its container. */
+  .workspace-directory-table-frame {
+    container-type: inline-size;
+  }
+
+  .workspace-directory-action {
+    min-height: 2.5rem;
+    padding-inline: 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  /* Once the columns themselves become too narrow, preserve the table's
+     semantics but present each row as a labelled record. This keeps every
+     action available without introducing horizontal scrolling. */
+  @container (max-width: 61rem) {
+    .workspace-directory-table {
+      display: block;
+      table-layout: auto;
+    }
+
+    .workspace-directory-table colgroup {
+      display: none;
+    }
+
+    .workspace-directory-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .workspace-directory-table tbody,
+    .workspace-directory-table tr,
+    .workspace-directory-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .workspace-directory-table tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.8rem 1.5rem;
+      padding: 1rem 0;
+    }
+
+    .workspace-directory-table td {
+      padding: 0;
+      min-width: 0;
+    }
+
+    .workspace-directory-table td::before {
+      content: attr(data-label);
+      display: block;
+      padding-bottom: 0.2rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      line-height: 1.4;
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+
+    .workspace-directory-table td[data-label="Actions"] {
+      grid-column: 1 / -1;
+    }
+
+    .workspace-directory-table td[data-label="Actions"] > div {
+      justify-content: flex-start;
+    }
+  }
+
+  @container (max-width: 34rem) {
+    .workspace-directory-table tr {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .workspace-directory-table td[data-label="Actions"] {
+      grid-column: auto;
+    }
+  }
 }
 
 @keyframes portal-toast-in {

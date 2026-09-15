@@ -171,7 +171,7 @@ function requestTypeLabel(type: string | null) {
 // Every RPC stamps where it was called from, and the raw value is a database
 // token rather than something an administrator should have to read.
 function sourceLabel(source: string | null) {
-  if (source === "portal_management") return "Groundstation management";
+  if (source === "portal_management") return "Management";
   if (source === "self_service") return "Requested by the person themselves";
   if (source === "database_admin") return "Database administrator";
   if (source === "retention_expiry") return "Automatic, retention period expired";
