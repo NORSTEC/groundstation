@@ -22,7 +22,7 @@
     "@supabase/supabase-js": "2.116.0",
     "@vercel/oidc": "^3.8.7",
     "google-auth-library": "^11.0.2",
-    "motion": "^13.2.0",
+    "motion": "^13.3.0",
     "next": "16.3.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -39,7 +39,7 @@
     "supabase": "2.117.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.1"
   },
   "packageManager": "pnpm@10.26.2"
 }
