@@ -24,6 +24,43 @@ export type MembershipPeriod = {
   personId: number;
 };
 
+export type MemberStatusMembership = {
+  personId: number;
+  status: string;
+};
+
+/**
+ * Derive the directory status for every current or former member. Direct
+ * alumni access is included because it can exist without a membership row.
+ * An active membership always takes precedence over alumni history.
+ */
+export function classifyMemberStatuses(
+  memberships: MemberStatusMembership[],
+  alumniAccessPersonIds: number[],
+) {
+  const activeMemberIds = new Set(
+    memberships
+      .filter((membership) => membership.status === "active")
+      .map((membership) => membership.personId),
+  );
+  const alumniMemberIds = new Set([
+    ...memberships
+      .filter((membership) => membership.status === "ended")
+      .map((membership) => membership.personId),
+    ...alumniAccessPersonIds,
+  ]);
+
+  for (const personId of activeMemberIds) {
+    alumniMemberIds.delete(personId);
+  }
+
+  return {
+    activeMemberIds,
+    alumniMemberIds,
+    allMemberIds: new Set([...activeMemberIds, ...alumniMemberIds]),
+  };
+}
+
 /**
  * One point per calendar month from the earliest period's start through the
  * current month, capped to the most recent `maxMonths`. A person counts as
