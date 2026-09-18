@@ -7,6 +7,7 @@ import { StudyYearColumns } from "@/components/portal/statistics/study-year-colu
 import {
   buildGrowthSeries,
   bucketByStudyYear,
+  classifyMemberStatuses,
   rankByCount,
   type MembershipPeriod,
 } from "@/lib/statistics";
@@ -27,34 +28,44 @@ type PersonRow = {
   study_year: number | null;
 };
 
+type AlumniPersonRow = {
+  id: number;
+};
+
 export default async function StatisticsPage() {
   await requirePortalAccess();
   const supabase = await createClient();
 
-  const membershipsResult = await supabase
-    .from("memberships")
-    .select(
-      "person_id, organization_id, status, joined_at, ended_at, starts_on, ends_on, organizations (name)",
-    )
-    .in("status", ["active", "ended"]);
+  const [membershipsResult, alumniResult] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select(
+        "person_id, organization_id, status, joined_at, ended_at, starts_on, ends_on, organizations (name)",
+      )
+      .in("status", ["active", "ended"]),
+    // Alumni access can be granted without creating a membership row. This
+    // is the same population included by the Members directory.
+    supabase
+      .from("people")
+      .select("id")
+      .not("alumni_access_granted_at", "is", null)
+      .eq("portal_access_status", "active")
+      .is("deleted_at", null),
+  ]);
 
-  if (membershipsResult.error) {
-    console.error("statistics memberships query failed", membershipsResult.error);
-    throw new Error(`Could not load Groundstation statistics: ${membershipsResult.error.message}`);
+  if (membershipsResult.error || alumniResult.error) {
+    const error = membershipsResult.error ?? alumniResult.error;
+    console.error("statistics member status query failed", error);
+    throw new Error(`Could not load Groundstation statistics: ${error?.message}`);
   }
 
   const memberships = membershipsResult.data as MembershipRow[];
-  const allMemberIds = new Set(memberships.map((membership) => membership.person_id));
-  const activeMemberIds = new Set(
-    memberships
-      .filter((membership) => membership.status === "active")
-      .map((membership) => membership.person_id),
-  );
-  const alumniMemberIds = new Set(
-    memberships
-      .filter((membership) => membership.status === "ended")
-      .map((membership) => membership.person_id)
-      .filter((personId) => !activeMemberIds.has(personId)),
+  const { activeMemberIds, alumniMemberIds, allMemberIds } = classifyMemberStatuses(
+    memberships.map((membership) => ({
+      personId: membership.person_id,
+      status: membership.status,
+    })),
+    (alumniResult.data as AlumniPersonRow[]).map((person) => person.id),
   );
 
   // Current members only — an organization's bar must not count people who
