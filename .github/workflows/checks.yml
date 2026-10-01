@@ -70,7 +70,7 @@ jobs:
       # local Supabase stack needs. With no `version` given, the action installs
       # the CLI version pinned in this repository's lockfile — so CI runs the
       # same one developers do.
-      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3
 
       # This job uses Postgres directly. Starting Mailpit, Studio and the API
       # services adds host ports and can collide with software on a hosted
